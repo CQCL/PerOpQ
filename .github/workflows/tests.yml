@@ -1,0 +1,67 @@
+name: All checks
+run-name: "[${{ github.ref_name }}] All checks"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # 04:00 every Tuesday morning
+    - cron: "0 4 * * 2"
+
+jobs:
+  tests:
+    name: Run ${{ matrix.session }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { python: "3.10", os: "ubuntu-22.04", session: "pre-commit" }
+          - { python: "3.10", os: "macos-12", session: "mypy" }
+          - { python: "3.10", os: "windows-2022", session: "tests" }
+          - { python: "3.10", os: "macos-12", session: "tests" }
+          - { python: "3.11", os: "windows-2022", session: "tests" }
+          - { python: "3.11", os: "ubuntu-22.04", session: "tests" }
+          - { python: "3.11", os: "macos-12", session: "tests" }
+          - { python: "3.10", os: "ubuntu-22.04", session: "docs-build" }
+    uses: ./.github/workflows/nox-session.yml
+    with:
+      python-version: ${{ matrix.python }}
+      os: ${{ matrix.os }}
+      nox-session: ${{ matrix.session }}
+
+  tests-with-coverage:
+    name: Run ${{ matrix.session }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { python: "3.10", os: "ubuntu-22.04", session: "tests" }
+    uses: ./.github/workflows/nox-session.yml
+    with:
+      python-version: ${{ matrix.python }}
+      os: ${{ matrix.os }}
+      nox-session: ${{ matrix.session }}
+      generate-coverage-report: true
+
+  all-test-jobs-succeeded:
+    name: All tests succeeded
+    needs:
+      - tests
+      - tests-with-coverage
+    if: always()
+    runs-on: ubuntu-22.04
+    steps:
+      - shell: python
+        name: Check job results
+        run: |
+          results = [
+              "${{ needs.tests.result }}",
+              "${{ needs.tests-with-coverage.result }}",
+          ]
+          if "failure" in results or "cancelled" in results:
+              raise Exception
