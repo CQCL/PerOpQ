@@ -1,2 +1,2 @@
 # PerOpQ
-Perturbative Optimization for Hamiltonian Simutlation
+Perturbative Optimization for Hamiltonian Simulation
