@@ -48,7 +48,7 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 sphinx = "^5.0.0"
 sphinx-autodoc-typehints = "^1.22"
-furo = "^2022.12.7"
+furo = "^2023.3.27"
 myst-parser = "^1.0.0"
 
 [tool.coverage.paths]
