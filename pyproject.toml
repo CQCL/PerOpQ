@@ -41,9 +41,11 @@ black = ">=22.3"
 ruff = "^0.0.247"
 darglint = "^1.8.1"
 pyupgrade = ">=2.29,<4.0"
-mypy = "^1.6"
 
-[tool.poetry.group.type-checking.dependencies]
+[tool.poetry.group.mypy]
+optional = true
+
+[tool.poetry.group.mypy.dependencies]
 mypy = "^1.6.0"
 
 

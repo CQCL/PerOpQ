@@ -49,11 +49,10 @@ def tests(session: nox.Session) -> None:
 @nox.session(python=python_versions)
 def mypy(session: nox.Session) -> None:
     """Type-check using mypy."""
-    args = session.posargs or ["pytket", "tests", "docs/conf.py", "docs/build-docs"]
+    args = session.posargs or ["src", "tests", "docs/conf.py"]
     poetry_install(session, groups=["mypy", "tests", "docs"])
     session.run(
         "mypy",
-        "--explicit-package-bases",
         *args,
     )
     if not session.posargs:
