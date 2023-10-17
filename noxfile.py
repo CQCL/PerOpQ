@@ -1,14 +1,19 @@
 """Nox sessions."""
+from __future__ import annotations
+
 import os
 import shlex
 import sys
-from collections.abc import Iterable
 from pathlib import Path
 from textwrap import dedent
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 import nox
 
-package = "pytket_aqt"
+package = "peropq"
 python_versions = ["3.11", "3.10"]
 nox.needs_version = ">= 2021.10.1"
 nox.options.sessions = (
@@ -74,7 +79,7 @@ def coverage(session: nox.Session) -> None:
 def docs_build(session: nox.Session) -> None:
     """Build the documentation."""
     poetry_install(session, groups=["docs"])
-    session.run("./docs/build-docs", *session.posargs, external=True)
+    session.run("sphinx-build", "-E", "docs", "docs/_build")
 
 
 def poetry_install(

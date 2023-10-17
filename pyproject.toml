@@ -14,10 +14,18 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 
+[tool.poetry.group.tests]
+optional = true
+
 [tool.poetry.group.tests.dependencies]
 pytest = "^7.2.1"
 pytest-cov = "^4.0.0"
-coverage = "^7.1.0"
+
+[tool.poetry.group.coverage]
+optional = true
+
+[tool.poetry.group.coverage.dependencies]
+coverage = {extras = ["toml"], version = ">=6.1,<8.0"}
 
 [tool.poetry.group.linting.dependencies]
 ruff = "^0.0.247"
@@ -33,6 +41,7 @@ black = ">=22.3"
 ruff = "^0.0.247"
 darglint = "^1.8.1"
 pyupgrade = ">=2.29,<4.0"
+mypy = "^1.6"
 
 [tool.poetry.group.type-checking.dependencies]
 mypy = "^1.6.0"
@@ -41,7 +50,6 @@ mypy = "^1.6.0"
 [tool.poetry.group.docs.dependencies]
 sphinx = "^5.0.0"
 sphinx-autodoc-typehints = "^1.22"
-sphinx-click = "^4.4.0"
 furo = "^2022.12.7"
 myst-parser = "^0.18.1"
 
@@ -63,7 +71,7 @@ select = ["F", "E", "W", "C90", "I", "N", "D", "UP", "YTT", "ANN",
     "EXE", "ISC", "ICN", "G", "INP", "PIE", "T20", "PT", "Q", "RET",
     "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PD", "PGH", "PL",
     "TRY", "RSE", "SLF", "RUF"]
-ignore = ["E501", "D211", "D212", "TCH001", "TCH002", "ANN101", "ANN102", "D100"]
+ignore = ["E501", "D211", "D212", "TCH001", "TCH002", "ANN101", "ANN102", "D100", "E741"]
 unfixable = ["T201"]
 # Assume Python 3.11.
 target-version = "py311"
@@ -71,8 +79,8 @@ target-version = "py311"
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["E402", "F403", "D104"]
 "tests/*" = ["S101"]
+"noxfile.py" = ["S101"]
 "docs/conf.py" = ["A001", "INP001"]
-"cli.py" = ["T201"]
 
 [tool.ruff.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
