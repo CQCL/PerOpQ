@@ -4,7 +4,7 @@ from peropq.pauli import Pauli, PauliTensor
 
 
 def paulis_commute(left_op: Pauli, right_op: Pauli) -> bool:
-    """Return the commutator for two Pauli gates.
+    """Return whether two Pauli gates commute.
 
     :param left_op The left side Pauli of the commutator
     :param right_op The right side of Pauli the commutator.
