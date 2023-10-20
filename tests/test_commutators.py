@@ -25,6 +25,7 @@ def test_pauls_commute() -> None:
 @pytest.mark.parametrize(
     ("tenslist1", "tenslist2", "coeff", "tenslistresult"),
     [
+        ([Pauli.X, Pauli.X, Pauli.Z], [Pauli.X, Pauli.X, Pauli.Z], 0, []),
         (
             [Pauli.X, Pauli.X, Pauli.X],
             [Pauli.Y, Pauli.Y, Pauli.Y],
@@ -37,7 +38,6 @@ def test_pauls_commute() -> None:
             2 * 1j,
             [Pauli.I, Pauli.Y, Pauli.I],
         ),
-        ([Pauli.X, Pauli.X, Pauli.Z], [Pauli.X, Pauli.X, Pauli.Z], 0, None),
         ([Pauli.X, Pauli.Z], [Pauli.X, Pauli.Y], 2 * (-1j), [Pauli.I, Pauli.X]),
         (
             [Pauli.X, Pauli.Y, Pauli.X],
@@ -56,8 +56,6 @@ def test_tensor_commutators(
     tens1 = PauliTensor.from_pauli_sequence(tenslist1)
     tens2 = PauliTensor.from_pauli_sequence(tenslist2)
     tens_result = (
-        None
-        if not tenslistresult
-        else PauliTensor.from_pauli_sequence(tenslistresult, coeff)
+        0 if coeff == 0 else PauliTensor.from_pauli_sequence(tenslistresult, coeff)
     )
     assert tens_result == get_commutator_pauli_tensors(tens1, tens2)

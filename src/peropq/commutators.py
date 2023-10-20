@@ -1,3 +1,5 @@
+from typing import Literal
+
 from peropq.pauli import Pauli, PauliTensor
 
 
@@ -21,7 +23,7 @@ def paulis_commute(left_op: Pauli, right_op: Pauli) -> bool:
 def get_commutator_pauli_tensors(
     left_tens: PauliTensor,
     right_tens: PauliTensor,
-) -> PauliTensor | None:
+) -> PauliTensor | Literal[0]:
     """Calculate the commutator of any two pauli tensors.
 
     :param left_tens left side of commutator
@@ -48,7 +50,7 @@ def get_commutator_pauli_tensors(
     # then the strings in total commute -> return None
     # this also covers the case that all Paulis commute
     if number_anti_commute % 2 == 0:
-        return None
+        return 0
     # Add factor two from 1 - (-1)^k = 2
     new_tensor.update({}, 2)
     # Deal with qubits in right_tens that aren't in left_tens
