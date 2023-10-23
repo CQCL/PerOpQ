@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from cmath import isclose
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -95,7 +96,7 @@ class PauliString:
         """
         if not isinstance(other, PauliString):
             return False
-        if self.coefficient != other.coefficient:
+        if not isclose(self.coefficient, other.coefficient):
             return False
         leftover_qubits = set(other.qubit_pauli_map.keys())
         for qubit, self_pauli in self.qubit_pauli_map.items():
