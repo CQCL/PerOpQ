@@ -62,5 +62,4 @@ def test_pauli_init() -> None:
         qubit_pauli_map={0: Pauli.I, 1: Pauli.X, 2: Pauli.Y},
         coefficient=1,
     )
-    for i in range(3):
-        assert ixy_string.get_pauli(i) == ixy_string_prime.get_pauli(i)
+    assert ixy_string == ixy_string_prime
