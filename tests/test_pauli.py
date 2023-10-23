@@ -26,3 +26,22 @@ def test_pauli_mult() -> None:
     assert Pauli.Z * Pauli.Y == (complex(0, -1), Pauli.X)
     assert Pauli.Z * Pauli.X == (complex(0, 1), Pauli.Y)
     assert Pauli.X * Pauli.Z == (complex(0, -1), Pauli.Y)
+
+
+def test_paulis_commute() -> None:
+    assert Pauli.I.commutes_with(Pauli.I)
+    assert Pauli.X.commutes_with(Pauli.X)
+    assert Pauli.Y.commutes_with(Pauli.Y)
+    assert Pauli.Z.commutes_with(Pauli.Z)
+    assert Pauli.I.commutes_with(Pauli.X)
+    assert Pauli.X.commutes_with(Pauli.I)
+    assert Pauli.I.commutes_with(Pauli.Y)
+    assert Pauli.Y.commutes_with(Pauli.I)
+    assert Pauli.I.commutes_with(Pauli.Z)
+    assert Pauli.Z.commutes_with(Pauli.I)
+    assert not Pauli.X.commutes_with(Pauli.Y)
+    assert not Pauli.Y.commutes_with(Pauli.X)
+    assert not Pauli.Y.commutes_with(Pauli.Z)
+    assert not Pauli.Z.commutes_with(Pauli.Y)
+    assert not Pauli.Z.commutes_with(Pauli.X)
+    assert not Pauli.X.commutes_with(Pauli.Z)

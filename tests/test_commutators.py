@@ -1,25 +1,6 @@
 import pytest
-from peropq.commutators import get_commutator_pauli_tensors, paulis_commute
+from peropq.commutators import get_commutator_pauli_tensors
 from peropq.pauli import Pauli, PauliString
-
-
-def test_pauls_commute() -> None:
-    assert paulis_commute(Pauli.I, Pauli.I)
-    assert paulis_commute(Pauli.X, Pauli.X)
-    assert paulis_commute(Pauli.Y, Pauli.Y)
-    assert paulis_commute(Pauli.Z, Pauli.Z)
-    assert paulis_commute(Pauli.I, Pauli.X)
-    assert paulis_commute(Pauli.X, Pauli.I)
-    assert paulis_commute(Pauli.I, Pauli.Y)
-    assert paulis_commute(Pauli.Y, Pauli.I)
-    assert paulis_commute(Pauli.I, Pauli.Z)
-    assert paulis_commute(Pauli.Z, Pauli.I)
-    assert not paulis_commute(Pauli.X, Pauli.Y)
-    assert not paulis_commute(Pauli.Y, Pauli.X)
-    assert not paulis_commute(Pauli.Y, Pauli.Z)
-    assert not paulis_commute(Pauli.Z, Pauli.Y)
-    assert not paulis_commute(Pauli.Z, Pauli.X)
-    assert not paulis_commute(Pauli.X, Pauli.Z)
 
 
 @pytest.mark.parametrize(
