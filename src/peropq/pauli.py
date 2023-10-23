@@ -74,6 +74,39 @@ class PauliString:
         """
         return cls({(i + start_qubit): pauli for i, pauli in enumerate(paulis)}, coeff)
 
+    def __post_init__(self) -> None:
+        """Special dataclass method that runs directly after initialization."""
+        self.prune()
+
+    def prune(self) -> PauliString:
+        """Remove any Identities from the string."""
+        qubits = list(self.qubit_pauli_map.keys())
+        for qubit in qubits:
+            if self.get_pauli(qubit) == Pauli.I:
+                self.qubit_pauli_map.pop(qubit)
+        return self
+
+    def __eq__(self, other: object) -> bool:
+        """Equality for PauliStrings.
+
+        Two PauliStrings are equal if their coefficients are equal and
+        if their Paulis are equal on all qubits. The underlying qubit_pauli_maps
+        may differ (in the number of Identities).
+        """
+        if not isinstance(other, PauliString):
+            return False
+        if self.coefficient != other.coefficient:
+            return False
+        leftover_qubits = set(other.qubit_pauli_map.keys())
+        for qubit, self_pauli in self.qubit_pauli_map.items():
+            if self_pauli != other.get_pauli(qubit):
+                return False
+            leftover_qubits.discard(qubit)
+        for qubit in leftover_qubits:
+            if self.get_pauli(qubit) != other.get_pauli(qubit):
+                return False
+        return True
+
     def get_pauli(self, qubit: int) -> Pauli:
         """Return the pauli at a given qubit.
 
@@ -88,12 +121,15 @@ class PauliString:
 
     def update(
         self,
-        qubit_pauli_map: dict[int, Pauli],
+        update_qubit_pauli_map: dict[int, Pauli],
         coeff: complex | None = None,
     ) -> PauliString:
         """Update the PauliString."""
-        for qubit, pauli in qubit_pauli_map.items():
-            self.qubit_pauli_map[qubit] = pauli
+        for qubit, pauli in update_qubit_pauli_map.items():
+            if pauli == Pauli.I:
+                self.qubit_pauli_map.pop(qubit, Pauli.I)
+            else:
+                self.qubit_pauli_map[qubit] = pauli
         if coeff:
             self.coefficient = self.coefficient * coeff
         return self
@@ -125,6 +161,19 @@ class PauliString:
         if number_anti_commute % 2 == 0:
             return True
         return False
+
+    def normalized_trace(self) -> complex:
+        """Returns `2^(-n)*Tr(self)`.
+
+        The trace is just the coefficient times the product of the traces of the Paulis
+        over all n qubits (including any identities on qubits not explicitly contained in the qubit_pauli_map). Since
+        `Tr(Pauli.I) == 2`, and `Tr(Pauli.X) == Tr(Pauli.Y) == Tr(Pauli.Z) == 0`, the result will either be 0 (if any
+        of the Paulis is not the Identity) or `self.coefficient` (if all paulis are the identity).
+        """
+        self.prune()
+        if len(self.qubit_pauli_map) == 0:
+            return self.coefficient
+        return 0
 
 
 def _pauli_string_mult(
