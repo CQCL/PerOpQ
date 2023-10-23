@@ -103,10 +103,7 @@ class PauliString:
             if self_pauli != other.get_pauli(qubit):
                 return False
             leftover_qubits.discard(qubit)
-        for qubit in leftover_qubits:
-            if self.get_pauli(qubit) != other.get_pauli(qubit):
-                return False
-        return True
+        return all(other.get_pauli(qubit) == Pauli.I for qubit in leftover_qubits)
 
     def get_pauli(self, qubit: int) -> Pauli:
         """Return the pauli at a given qubit.
@@ -141,10 +138,8 @@ class PauliString:
             return _pauli_string_mult(self, other)
         return PauliString(self.qubit_pauli_map, self.coefficient * other)
 
-    def __rmul__(self, other: PauliString | complex) -> PauliString:
+    def __rmul__(self, other: complex) -> PauliString:
         """Multiply PauliString with a complex number or PauliString."""
-        if isinstance(other, PauliString):
-            return _pauli_string_mult(self, other)
         return PauliString(self.qubit_pauli_map, self.coefficient * other)
 
     def commutes_with(self, other: PauliString) -> bool:

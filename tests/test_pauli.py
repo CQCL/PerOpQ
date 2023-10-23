@@ -48,6 +48,38 @@ def test_paulis_commute() -> None:
     assert not Pauli.X.commutes_with(Pauli.Z)
 
 
+def test_pauli_string_equality() -> None:
+    string1 = PauliString.from_pauli_sequence([Pauli.X, Pauli.Y], 2j)
+    string2 = PauliString.from_pauli_sequence([Pauli.X, Pauli.Y], 2.03j)
+    string3 = PauliString.from_pauli_sequence([Pauli.X, Pauli.Y], 2.00000000000003j)
+    string4 = PauliString.from_pauli_sequence([Pauli.X, Pauli.Y], 2.03)
+
+    assert string1 != 5
+    assert string1 != string2
+    assert string2 != string3
+    assert string1 == string3
+    assert string2 != string4
+
+    string5 = PauliString.from_pauli_sequence([Pauli.X, Pauli.Z], 2j)
+    string6 = PauliString.from_pauli_sequence([Pauli.X, Pauli.Y, Pauli.Z], 2j)
+    string7 = PauliString(string1.qubit_pauli_map.copy(), string1.coefficient)
+    string7.qubit_pauli_map[2] = Pauli.I
+
+    assert string1 != string5
+    assert string1 != string6
+    assert string1 == string7
+
+
+def test_get_pauli() -> None:
+    string1 = PauliString.from_pauli_sequence([Pauli.X, Pauli.Y], 2j)
+    with pytest.raises(ValueError):
+        string1.get_pauli(-4)
+    assert string1.get_pauli(0) == Pauli.X
+    assert string1.get_pauli(1) == Pauli.Y
+    assert string1.get_pauli(2) == Pauli.I
+    assert string1.get_pauli(200) == Pauli.I
+
+
 def test_pauli_string_init() -> None:
     xy_string = PauliString.from_pauli_sequence(paulis=[Pauli.X, Pauli.Y])
     xy_string_prime = PauliString(
