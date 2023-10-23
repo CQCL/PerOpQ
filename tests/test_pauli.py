@@ -1,4 +1,4 @@
-from peropq.pauli import Pauli
+from peropq.pauli import Pauli, PauliTensor
 
 
 def test_pauli() -> None:
@@ -26,3 +26,22 @@ def test_pauli_mult() -> None:
     assert Pauli.Z * Pauli.Y == (complex(0, -1), Pauli.X)
     assert Pauli.Z * Pauli.X == (complex(0, 1), Pauli.Y)
     assert Pauli.X * Pauli.Z == (complex(0, -1), Pauli.Y)
+
+
+def test_pauli_init() -> None:
+    xy_string = PauliTensor.from_pauli_sequence(paulis=[Pauli.X, Pauli.Y])
+    xy_string_prime = PauliTensor(
+        qubit_pauli_map={0: Pauli.X, 1: Pauli.Y},
+        coefficient=1,
+    )
+    assert xy_string == xy_string_prime
+    ixy_string = PauliTensor.from_pauli_sequence(
+        paulis=[Pauli.X, Pauli.Y],
+        start_qubit=1,
+    )
+    ixy_string_prime = PauliTensor(
+        qubit_pauli_map={0: Pauli.I, 1: Pauli.X, 2: Pauli.Y},
+        coefficient=1,
+    )
+    for i in range(3):
+        assert ixy_string.get_pauli(i) == ixy_string_prime.get_pauli(i)
