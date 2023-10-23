@@ -1,6 +1,6 @@
 from typing import Literal
 
-from peropq.pauli import Pauli, PauliTensor
+from peropq.pauli import Pauli, PauliString
 
 
 def paulis_commute(left_op: Pauli, right_op: Pauli) -> bool:
@@ -21,9 +21,9 @@ def paulis_commute(left_op: Pauli, right_op: Pauli) -> bool:
 
 
 def get_commutator_pauli_tensors(
-    left_tens: PauliTensor,
-    right_tens: PauliTensor,
-) -> PauliTensor | Literal[0]:
+    left_tens: PauliString,
+    right_tens: PauliString,
+) -> PauliString | Literal[0]:
     """Calculate the commutator of any two pauli tensors.
 
     :param left_tens left side of commutator
@@ -36,7 +36,7 @@ def get_commutator_pauli_tensors(
 
     :returns: None if the tensors commute, otherwise the commutator as a Pauli tensor
     """
-    new_tensor = PauliTensor()
+    new_tensor = PauliString()
     number_anti_commute = 0
     leftover_right_qubits = set(right_tens.qubit_pauli_map.keys())
     for qubit, left_pauli in left_tens.qubit_pauli_map.items():

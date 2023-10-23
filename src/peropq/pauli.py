@@ -31,7 +31,7 @@ class Pauli(Enum):
 
 
 @dataclass()
-class PauliTensor:
+class PauliString:
     """Class representing a Pauli string multiplied by a complex coefficient."""
 
     qubit_pauli_map: dict[int, Pauli] = field(default_factory=dict)
@@ -43,7 +43,7 @@ class PauliTensor:
         paulis: Sequence[Pauli],
         coeff: complex = 1,
         start_qubit: int = 0,
-    ) -> "PauliTensor":
+    ) -> "PauliString":
         """Create from a sequence of Paulis.
 
         The Paulis will be placed sequentially on qubits starting from qubit index <start_qubit>
@@ -70,7 +70,7 @@ class PauliTensor:
         self,
         qubit_pauli_map: dict[int, Pauli],
         coeff: complex | None = None,
-    ) -> "PauliTensor":
+    ) -> "PauliString":
         """Update the PauliTensor."""
         for qubit, pauli in qubit_pauli_map.items():
             self.qubit_pauli_map[qubit] = pauli
