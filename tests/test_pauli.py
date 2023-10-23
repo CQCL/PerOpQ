@@ -1,4 +1,4 @@
-from peropq.pauli import Pauli
+from peropq.pauli import Pauli, PauliString
 
 
 def test_pauli() -> None:
@@ -45,3 +45,22 @@ def test_paulis_commute() -> None:
     assert not Pauli.Z.commutes_with(Pauli.Y)
     assert not Pauli.Z.commutes_with(Pauli.X)
     assert not Pauli.X.commutes_with(Pauli.Z)
+
+
+def test_pauli_init() -> None:
+    xy_string = PauliString.from_pauli_sequence(paulis=[Pauli.X, Pauli.Y])
+    xy_string_prime = PauliString(
+        qubit_pauli_map={0: Pauli.X, 1: Pauli.Y},
+        coefficient=1,
+    )
+    assert xy_string == xy_string_prime
+    ixy_string = PauliString.from_pauli_sequence(
+        paulis=[Pauli.X, Pauli.Y],
+        start_qubit=1,
+    )
+    ixy_string_prime = PauliString(
+        qubit_pauli_map={0: Pauli.I, 1: Pauli.X, 2: Pauli.Y},
+        coefficient=1,
+    )
+    for i in range(3):
+        assert ixy_string.get_pauli(i) == ixy_string_prime.get_pauli(i)
