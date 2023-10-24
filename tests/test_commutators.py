@@ -1,25 +1,6 @@
 import pytest
-from peropq.commutators import get_commutator_pauli_tensors, paulis_commute
-from peropq.pauli import Pauli, PauliTensor
-
-
-def test_pauls_commute() -> None:
-    assert paulis_commute(Pauli.I, Pauli.I)
-    assert paulis_commute(Pauli.X, Pauli.X)
-    assert paulis_commute(Pauli.Y, Pauli.Y)
-    assert paulis_commute(Pauli.Z, Pauli.Z)
-    assert paulis_commute(Pauli.I, Pauli.X)
-    assert paulis_commute(Pauli.X, Pauli.I)
-    assert paulis_commute(Pauli.I, Pauli.Y)
-    assert paulis_commute(Pauli.Y, Pauli.I)
-    assert paulis_commute(Pauli.I, Pauli.Z)
-    assert paulis_commute(Pauli.Z, Pauli.I)
-    assert not paulis_commute(Pauli.X, Pauli.Y)
-    assert not paulis_commute(Pauli.Y, Pauli.X)
-    assert not paulis_commute(Pauli.Y, Pauli.Z)
-    assert not paulis_commute(Pauli.Z, Pauli.Y)
-    assert not paulis_commute(Pauli.Z, Pauli.X)
-    assert not paulis_commute(Pauli.X, Pauli.Z)
+from peropq.commutators import get_commutator_pauli_tensors
+from peropq.pauli import Pauli, PauliString
 
 
 @pytest.mark.parametrize(
@@ -53,9 +34,9 @@ def test_tensor_commutators(
     coeff: complex,
     tenslistresult: list[Pauli],
 ) -> None:
-    tens1 = PauliTensor.from_pauli_sequence(tenslist1)
-    tens2 = PauliTensor.from_pauli_sequence(tenslist2)
+    tens1 = PauliString.from_pauli_sequence(tenslist1)
+    tens2 = PauliString.from_pauli_sequence(tenslist2)
     tens_result = (
-        0 if coeff == 0 else PauliTensor.from_pauli_sequence(tenslistresult, coeff)
+        0 if coeff == 0 else PauliString.from_pauli_sequence(tenslistresult, coeff)
     )
     assert tens_result == get_commutator_pauli_tensors(tens1, tens2)
