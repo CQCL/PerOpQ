@@ -24,4 +24,3 @@ def test_optimizer() -> None:
     assert res[0].fun < 1e-14
 
 
-test_optimizer()
