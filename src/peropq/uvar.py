@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Uvar:
     def __init__(self, n_terms, R, cjs, t):
         self.n_terms = n_terms
@@ -22,6 +25,9 @@ class Uvar:
             for r in range(self.R - 1):
                 theta_trotter[r, j] = self.cjs[j] * self.t / self.R
         return theta_trotter
+
+    def flatten_theta(self, theta):
+        return np.array(theta).reshape((self.R - 1) * self.n_terms)
 
     def set_theta_to_Trotter(self):
         theta_trotter = self.get_initial_trotter_vector()
