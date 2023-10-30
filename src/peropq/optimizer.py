@@ -19,45 +19,41 @@ class Optimizer:
         self.uvar.set_theta_to_Trotter()
         self.cache = {}
 
+        self.index_pairs = []
+        commutators = []
+
+        i = 0
+        for j_prime, H_j_prime in enumerate(self.hamiltonian.pauli_string_list):
+            for j in range(j_prime + 1, self.n_terms):
+                H_j = self.hamiltonian.pauli_string_list[j]
+                commutator = get_commutator_pauli_tensors(H_j, H_j_prime)
+                if commutator:
+                    self.index_pairs.append((j, j_prime))
+                    commutators.append((i, commutator))
+                    i += 1
+
+        self.traces = []
+        for j_, j_commutator in commutators:
+            for k_, k_commutator in commutators:
+                if j_ < k_:
+                    continue
+                product_commutators = j_commutator * k_commutator
+                if product_commutators != 0:
+                    trace = product_commutators.normalized_trace()
+                    if trace:
+                        fac = 1 if j_ == k_ else 2.0
+                        self.traces.append(
+                            (j_, k_, fac * product_commutators.normalized_trace()),
+                        )
+
     def C2_squared(self, theta: Sequence[float] = []):
         if len(theta) != 0:
             theta_new = np.array(theta).reshape((self.uvar.R - 1, self.uvar.n_terms))
             self.uvar.update_theta(theta_new)
-        if self.cache == {}:
-            print("starting cache")
-            commutator_list = []
-            indices_list = []
-            for j, H_j in enumerate(self.hamiltonian.pauli_string_list):
-                for j_prime, H_j_prime in enumerate(self.hamiltonian.pauli_string_list):
-                    if j > j_prime:
-                        commutator_list.append(
-                            get_commutator_pauli_tensors(H_j, H_j_prime),
-                        )
-                        indices_list.append((j, j_prime))
-            self.cache["commutator_list"] = commutator_list
-            self.cache["trace_list"] = []
-            self.cache["indices_list"] = []
-            for j, j_commutator in enumerate(self.cache["commutator_list"]):
-                for k, k_commutator in enumerate(self.cache["commutator_list"]):
-                    product_commutators = j_commutator * k_commutator
-                    if product_commutators != 0 and product_commutators.coefficient != 0:
-                        if product_commutators.normalized_trace() != 0:
-                            self.cache["trace_list"].append(product_commutators.normalized_trace())
-                            self.cache["indices_list"].append((indices_list[j][0],indices_list[j][1],indices_list[k][0],indices_list[k][1]))
-            print("end cache")
         c2_squared_result = 0
-        for i,trace in enumerate(self.cache["trace_list"]): 
-            c2_squared_result -= (
-                self.uvar.chi(
-                    self.cache["indices_list"][i][0],
-                    self.cache["indices_list"][i][1],
-                )
-                * self.uvar.chi(
-                    self.cache["indices_list"][i][2],
-                    self.cache["indices_list"][i][3],
-                )
-                * trace
-            )
+        chi = [self.uvar.chi(j, m) for j, m in self.index_pairs]
+        for i, j, trace in self.traces:
+            c2_squared_result -= chi[i] * chi[j] * trace
         return c2_squared_result
 
     def get_minumum_c2_squared(self, initial_guess: Sequence[float] = None):

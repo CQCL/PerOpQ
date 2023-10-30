@@ -8,6 +8,10 @@ class Uvar:
         self.theta = np.zeros((R, n_terms))
         self.cjs = cjs
         self.t = t
+        self.test = np.zeros((R, R))
+        for r in range(R):
+            for s in range(R):
+                self.test[r, s] = -1 if s > r else 1
 
     def update_theta(self, new_array):
         if new_array.shape != (self.R - 1, self.n_terms):
@@ -34,13 +38,5 @@ class Uvar:
         self.update_theta(theta_trotter)
 
     def chi(self, j, m):
-        c = 0
-        for r in range(self.R):
-            c += self.theta[r, j] * self.theta[r, m]
-        for q in range(self.R):
-            for r in range(q + 1, self.R):
-                c += (
-                    self.theta[r, j] * self.theta[q, m]
-                    - self.theta[r, m] * self.theta[q, j]
-                )
-        return c
+        cc1 = self.theta[:, j].transpose() @ self.test @ self.theta[:, m]
+        return cc1
