@@ -2,6 +2,7 @@ import numpy as np
 from peropq.hamiltonian import Hamiltonian
 from peropq.optimizer import Optimizer
 from peropq.pauli import Pauli, PauliString
+from peropq.variational_unitary import VariationalUnitary
 
 
 def test_optimizer() -> None:
@@ -18,9 +19,8 @@ def test_optimizer() -> None:
     for i in range(4):
         term_list.append(x_list[i])
     h_ising = Hamiltonian(pauli_string_list=term_list)
-    Uvar = VariationalUnitary.using_inititial_trotter(h_ising, R=3, t=1.0)
-    Uvar = VariationalUnitary.using_baldjkdd(h_ising, R=3, t=1.0)
-    opt = Optimizer(Uvar)
+    variational_unitary= VariationalUnitary(h_ising, R=3, t=1.0)
+    opt = Optimizer(variation_unitary=variational_unitary)
     assert np.isclose(opt.C2_squared(), 2.66666666666666)
     res = opt.get_minumum_c2_squared()
     assert res[0].fun < 1e-11

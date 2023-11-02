@@ -1,12 +1,14 @@
 import numpy as np
+from peropq.hamiltonian import Hamiltonian
+from collections.abc import Sequence
 
-
-class Uvar:
-    def __init__(self, n_terms, R, cjs, t):
-        self.n_terms = n_terms
+class VariationalUnitary:
+    def __init__(self, hamiltonian:Hamiltonian, R:int, t:float):
+        self.hamiltonian = hamiltonian
+        self.n_terms = hamiltonian.get_n_terms()
         self.R = R
-        self.theta = np.zeros((R, n_terms))
-        self.cjs = cjs
+        self.theta = np.zeros((R, self.n_terms))
+        self.cjs =hamiltonian.get_cjs()
         self.t = t
         self.test = np.zeros((R, R))
         for r in range(R):
@@ -40,3 +42,11 @@ class Uvar:
     def chi(self, j, m):
         cc1 = self.theta[:, j].transpose() @ self.test @ self.theta[:, m]
         return cc1
+
+    def chi_tensor(self,left_indices,right_indices):
+        theta_L = self.theta[:,left_indices]
+        theta_R = self.theta[:,right_indices]
+        res = np.tensordot(theta_L,self.test,[[0],[0]])
+        res = np.tensordot(res,theta_R,[[1],[0]])
+        return res
+        
