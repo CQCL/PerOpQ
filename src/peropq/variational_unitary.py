@@ -41,12 +41,12 @@ class VariationalUnitary:
 
     def chi(self, j, m):
         cc1 = self.theta[:, j].transpose() @ self.test @ self.theta[:, m]
-        return cc1
+        return 0.5*cc1
 
     def chi_tensor(self,left_indices,right_indices):
         theta_L = self.theta[:,left_indices]
         theta_R = self.theta[:,right_indices]
         res = np.tensordot(theta_L,self.test,[[0],[0]])
         res = np.tensordot(res,theta_R,[[1],[0]])
-        return res
+        return 0.5*res
         
