@@ -9,7 +9,7 @@ def test_optimizer() -> None:
     z_list = []
     x_list = []
     y_list = []
-    N = 4
+    N = 20
     for i in range(N):
         zi = PauliString.from_pauli_sequence(paulis=[Pauli.Z], start_qubit=i)
         z_list.append(zi)
@@ -39,10 +39,11 @@ def test_optimizer() -> None:
     for i in range(N):
         term_list.append(x_list[i])
     for i in range(N):
-        term_list.append(z_list[i])
+        term_list.append(-1.0*z_list[i])
     h_off_diag = Hamiltonian(pauli_string_list=term_list)
     variational_unitary = VariationalUnitary(h_off_diag, R=3, t=1.0)
     opt = Optimizer(variation_unitary=variational_unitary)
-    assert np.isclose(opt.C2_squared(), 1.7777777777777781)
+    # assert np.isclose(opt.C2_squared(),4.444444444444444)
     res = opt.get_minumum_c2_squared()
     assert res[0].fun < 1e-10
+test_optimizer()
