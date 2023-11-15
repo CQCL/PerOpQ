@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 
 import numpy as np
-import scipy
-from scipy.sparse import csr_array
+import numpy.typing as npt
+import scipy  # type: ignore[import-untyped]
+from scipy.sparse import csr_array  # type: ignore[import-untyped]
 
 from peropq.commutators import get_commutator_pauli_tensors
 from peropq.hamiltonian import Hamiltonian
@@ -25,11 +26,10 @@ class Optimizer:
         self.n_terms: int = self.hamiltonian.get_n_terms()
         self.cjs: Sequence[complex] = self.hamiltonian.get_cjs()
         self.variational_unitary: VariationalUnitary = variation_unitary
-        self.variational_unitary.set_theta_to_Trotter()
-        self.cache = {}
+        self.variational_unitary.set_theta_to_trotter()
 
-        commutators: Sequence[tuple[int, PauliString]] = []
-        index_pairs: Sequence[tuple[int, int]] = []
+        commutators: list[tuple[int, PauliString]] = []
+        index_pairs: list[tuple[int, int]] = []
         i = 0
         for j_prime, h_j_prime in enumerate(self.hamiltonian.pauli_string_list):
             for j in range(j_prime + 1, self.n_terms):
@@ -39,10 +39,10 @@ class Optimizer:
                     index_pairs.append((j, j_prime))
                     commutators.append((i, commutator))
                     i += 1
-        self.index_pairs: np.ndarray[int] = np.array(index_pairs)
-        self.left_indices: np.ndarray[int] = np.unique(self.index_pairs[:, 0])
-        self.right_indices: np.ndarray[int] = np.unique(self.index_pairs[:, 1])
-        self.trace_tensor: np.ndarray = 1j * np.zeros(
+        self.index_pairs: npt.NDArray = np.array(index_pairs)
+        self.left_indices: npt.NDArray = np.unique(self.index_pairs[:, 0])
+        self.right_indices: npt.NDArray = np.unique(self.index_pairs[:, 1])
+        self.trace_tensor: npt.NDArray = 1j * np.zeros(
             (
                 len(self.left_indices),
                 len(self.right_indices),
@@ -60,16 +60,16 @@ class Optimizer:
                     if trace:
                         fac = 1 if j_ == k_ else 2.0
                         # Get the new indices
-                        new_j: np.array = np.where(
+                        new_j: int = np.where(
                             self.left_indices == self.index_pairs[j_, 0],
                         )[0].item()
-                        new_j_prime: np.array = np.where(
+                        new_j_prime: int = np.where(
                             self.right_indices == self.index_pairs[j_, 1],
                         )[0].item()
-                        new_k: np.array = np.where(
+                        new_k: int = np.where(
                             self.left_indices == self.index_pairs[k_, 0],
                         )[0].item()
-                        new_k_prime: np.array = np.where(
+                        new_k_prime: int = np.where(
                             self.right_indices == self.index_pairs[k_, 1],
                         )[0].item()
                         self.trace_tensor[new_j, new_j_prime, new_k, new_k_prime] = (
@@ -85,7 +85,10 @@ class Optimizer:
         """
         if len(theta) != 0:
             theta_new = np.array(theta).reshape(
-                (self.variational_unitary.R - 1, self.variational_unitary.n_terms),
+                (
+                    self.variational_unitary.number_of_layer - 1,
+                    self.variational_unitary.n_terms,
+                ),
             )
             self.variational_unitary.update_theta(theta_new)
         chi_tensor = self.variational_unitary.chi_tensor(
@@ -93,7 +96,7 @@ class Optimizer:
             self.right_indices,
         )
         s1, s2, s3, s4 = self.trace_tensor.shape
-        chi_tensor: np.array = chi_tensor.reshape((s1 * s2,))
+        chi_tensor = chi_tensor.reshape((s1 * s2,))
         trace_tensor: csr_array = csr_array(
             self.trace_tensor.reshape((s1 * s2, s3 * s4)),
         )
@@ -102,7 +105,7 @@ class Optimizer:
     def get_minumum_c2_squared(
         self,
         initial_guess: Sequence[float] = [],
-    ) -> tuple[np.array, scipy.optimize.OptimizeResult]:
+    ) -> tuple[scipy.optimize.OptimizeResult, float]:
         """
         Perform the minimization.
 
@@ -111,7 +114,7 @@ class Optimizer:
         returns: the perturbative 2-norm
         """
         if len(initial_guess) != 0:
-            x0 = initial_guess
+            x0: npt.NDArray = np.array(initial_guess)
         else:
             x0 = self.variational_unitary.get_initial_trotter_vector()
             x0 = self.variational_unitary.flatten_theta(x0)
