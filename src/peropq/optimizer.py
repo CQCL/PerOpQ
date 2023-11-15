@@ -20,8 +20,8 @@ class Optimizer:
         param: variational_unitary ansatz to be optimized.
         """
         self.hamiltonian: Hamiltonian = variation_unitary.hamiltonian
-        self.R: int = variation_unitary.R
-        self.t: float = variation_unitary.t
+        self.number_of_layer: int = variation_unitary.number_of_layer
+        self.time: float = variation_unitary.time
         self.n_terms: int = self.hamiltonian.get_n_terms()
         self.cjs: Sequence[complex] = self.hamiltonian.get_cjs()
         self.variational_unitary: VariationalUnitary = variation_unitary

@@ -8,7 +8,9 @@ from peropq.hamiltonian import Hamiltonian
 class VariationalUnitary:
     """class representing the variational unitary ansataz."""
 
-    def __init__(self, hamiltonian: Hamiltonian, R: int, t: float) -> None:
+    def __init__(
+        self, hamiltonian: Hamiltonian, number_of_layer: int, time: float
+    ) -> None:
         """
         Init function.
 
@@ -18,13 +20,13 @@ class VariationalUnitary:
         """
         self.hamiltonian: Hamiltonian = hamiltonian
         self.n_terms: int = hamiltonian.get_n_terms()
-        self.R: float = R
-        self.theta: np.array = np.zeros((R, self.n_terms))
+        self.number_of_layer: float = number_of_layer
+        self.theta: np.array = np.zeros((number_of_layer, self.n_terms))
         self.cjs: Sequence[complex] = hamiltonian.get_cjs()
-        self.t: float = t
-        self.test: np.array = np.zeros((R, R))
-        for r in range(R):
-            for s in range(R):
+        self.time: float = time
+        self.test: np.array = np.zeros((number_of_layer, number_of_layer))
+        for r in range(number_of_layer):
+            for s in range(number_of_layer):
                 self.test[r, s] = -1 if s > r else 1
 
     def update_theta(self, new_array: np.array) -> None:
@@ -33,26 +35,26 @@ class VariationalUnitary:
 
         :param new_array the new array containing the variational parameters. It's shape must be (R - 1, n_terms).
         """
-        if new_array.shape != (self.R - 1, self.n_terms):
-            raise ValueError("Wrong length new array.")
+        if new_array.shape != (self.number_of_layer - 1, self.n_terms):
+            raise ValueError("Wrong length provided.")
         for j in range(self.n_terms):
-            for r in range(self.R - 1):
+            for r in range(self.number_of_layer - 1):
                 self.theta[r, j] = new_array[r, j]
-            self.theta[self.R - 1, j] = self.t * self.cjs[j]
-            for r in range(self.R - 1):
-                self.theta[self.R - 1, j] -= new_array[r, j]
+            self.theta[self.number_of_layer - 1, j] = self.time * self.cjs[j]
+            for r in range(self.number_of_layer - 1):
+                self.theta[self.number_of_layer - 1, j] -= new_array[r, j]
 
     def get_initial_trotter_vector(self) -> np.array:
         """Get the variational parameters corresponding to the Trotterization. Useful to initialize the optimization."""
-        theta_trotter: np.array = np.zeros((self.R - 1, self.n_terms))
+        theta_trotter: np.array = np.zeros((self.number_of_layer - 1, self.n_terms))
         for j in range(self.n_terms):
-            for r in range(self.R - 1):
-                theta_trotter[r, j] = self.cjs[j] * self.t / self.R
+            for r in range(self.number_of_layer - 1):
+                theta_trotter[r, j] = self.cjs[j] * self.time / self.number_of_layer
         return theta_trotter
 
     def flatten_theta(self, theta: np.array) -> np.array:
         """Returns the variational parameters as flatten (R-1)*n_terms array. Useful to pass to a minimization function."""
-        return np.array(theta).reshape((self.R - 1) * self.n_terms)
+        return np.array(theta).reshape((self.number_of_layer - 1) * self.n_terms)
 
     def set_theta_to_Trotter(self) -> None:
         """Sets the variational parameters to the Trotter parameters."""
