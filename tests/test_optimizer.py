@@ -26,7 +26,7 @@ def test_optimizer() -> None:
     h_ising = Hamiltonian(pauli_string_list=term_list)
     variational_unitary = VariationalUnitary(h_ising, R=3, t=1.0)
     opt = Optimizer(variation_unitary=variational_unitary)
-    assert np.isclose(opt.C2_squared(), 0.25 * 2.66666666666666)
+    assert np.isclose(opt.c2_squared(), 0.25 * 2.66666666666666)
     res = opt.get_minumum_c2_squared()
     assert res[0].fun < 1e-10
     # XY+YZ+X+Z
