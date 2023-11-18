@@ -29,7 +29,7 @@ class VariationalUnitary:
         """
         self.hamiltonian: Hamiltonian = hamiltonian
         self.n_terms: int = hamiltonian.get_n_terms()
-        self.number_of_layer: int = number_of_layer
+        self.depth: int = number_of_layer
         self.theta: npt.NDArray = np.zeros((number_of_layer, self.n_terms))
         self.cjs: Sequence[complex] = hamiltonian.get_cjs()
         self.time: float = time
@@ -44,42 +44,32 @@ class VariationalUnitary:
 
         :param new_array the new array containing the variational parameters. It's shape must be (R - 1, n_terms).
         """
-        if new_array.shape != (self.number_of_layer - 1, self.n_terms):
+        if new_array.shape != (self.depth - 1, self.n_terms):
             error_message = "Wrong length provided."
             raise ValueError(error_message)
         for j in range(self.n_terms):
-            for r in range(self.number_of_layer - 1):
+            for r in range(self.depth - 1):
                 self.theta[r, j] = new_array[r, j]
-            self.theta[self.number_of_layer - 1, j] = self.time * self.cjs[j]
-            for r in range(self.number_of_layer - 1):
-                self.theta[self.number_of_layer - 1, j] -= new_array[r, j]
+            self.theta[self.depth - 1, j] = self.time * self.cjs[j]
+            for r in range(self.depth - 1):
+                self.theta[self.depth - 1, j] -= new_array[r, j]
 
     def get_initial_trotter_vector(self) -> npt.NDArray:
         """Get the variational parameters corresponding to the Trotterization. Useful to initialize the optimization."""
-        theta_trotter: npt.NDArray = np.zeros((self.number_of_layer - 1, self.n_terms))
+        theta_trotter: npt.NDArray = np.zeros((self.depth - 1, self.n_terms))
         for j in range(self.n_terms):
-            for r in range(self.number_of_layer - 1):
-                theta_trotter[r, j] = self.cjs[j] * self.time / self.number_of_layer
+            for r in range(self.depth - 1):
+                theta_trotter[r, j] = self.cjs[j] * self.time / self.depth
         return theta_trotter
 
     def flatten_theta(self, theta: npt.NDArray) -> npt.NDArray:
         """Returns the variational parameters as flatten (R-1)*n_terms array. Useful to pass to a minimization function."""
-        return np.array(theta).reshape((self.number_of_layer - 1) * self.n_terms)
+        return np.array(theta).reshape((self.depth - 1) * self.n_terms)
 
     def set_theta_to_trotter(self) -> None:
         """Sets the variational parameters to the Trotter parameters."""
         theta_trotter: npt.NDArray = self.get_initial_trotter_vector()
         self.update_theta(theta_trotter)
-
-    def chi(self, j: int, m: int) -> float:
-        """
-        Returns chi for two indices.
-
-        param: j index
-        param: m index
-        """
-        cc1 = self.theta[:, j].transpose() @ self.test @ self.theta[:, m]
-        return 0.5 * cc1
 
     def chi_tensor(
         self,

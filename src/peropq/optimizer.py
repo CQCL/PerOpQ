@@ -6,7 +6,6 @@ import scipy  # type: ignore[import-untyped]
 from scipy.sparse import csr_array  # type: ignore[import-untyped]
 
 from peropq.commutators import get_commutator_pauli_tensors
-from peropq.hamiltonian import Hamiltonian
 from peropq.pauli import PauliString
 from peropq.variational_unitary import VariationalUnitary
 
@@ -20,20 +19,17 @@ class Optimizer:
 
         param: variational_unitary ansatz to be optimized.
         """
-        self.hamiltonian: Hamiltonian = variation_unitary.hamiltonian
-        self.number_of_layer: int = variation_unitary.number_of_layer
-        self.time: float = variation_unitary.time
-        self.n_terms: int = self.hamiltonian.get_n_terms()
-        self.cjs: Sequence[complex] = self.hamiltonian.get_cjs()
-        self.variational_unitary: VariationalUnitary = variation_unitary
+        self.variational_unitary = variation_unitary
         self.variational_unitary.set_theta_to_trotter()
 
         commutators: list[tuple[int, PauliString]] = []
         index_pairs: list[tuple[int, int]] = []
         i = 0
-        for j_prime, h_j_prime in enumerate(self.hamiltonian.pauli_string_list):
-            for j in range(j_prime + 1, self.n_terms):
-                h_j = self.hamiltonian.pauli_string_list[j]
+        for j_prime, h_j_prime in enumerate(
+            self.variational_unitary.hamiltonian.pauli_string_list,
+        ):
+            for j in range(j_prime + 1, self.variational_unitary.n_terms):
+                h_j = self.variational_unitary.hamiltonian.pauli_string_list[j]
                 commutator = get_commutator_pauli_tensors(h_j, h_j_prime)
                 if commutator:
                     index_pairs.append((j, j_prime))
@@ -86,7 +82,7 @@ class Optimizer:
         if len(theta) != 0:
             theta_new = np.array(theta).reshape(
                 (
-                    self.variational_unitary.number_of_layer - 1,
+                    self.variational_unitary.depth - 1,
                     self.variational_unitary.n_terms,
                 ),
             )
