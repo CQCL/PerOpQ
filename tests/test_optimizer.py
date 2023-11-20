@@ -25,9 +25,14 @@ def test_optimizer() -> None:
         term_list.append(x_list[i])
     h_ising = Hamiltonian(pauli_string_list=term_list)
     variational_unitary = VariationalUnitary(h_ising, number_of_layer=3, time=1.0)
-    opt = Optimizer(variation_unitary=variational_unitary)
-    assert np.isclose(opt.c2_squared(), 0.25 * 2.66666666666666)
-    res = opt.get_minumum_c2_squared()
+    opt = Optimizer()
+    assert np.isclose(
+        variational_unitary.c2_squared(
+            variational_unitary.get_initial_trotter_vector(),
+        ),
+        0.25 * 2.66666666666666,
+    )
+    res = opt.get_minumum_c2_squared(variational_unitary)
     assert res[0].fun < 1e-10
     # XY+YZ+X+Z
     term_list = []
@@ -41,7 +46,12 @@ def test_optimizer() -> None:
         term_list.append(-1.0 * z_list[i])
     h_off_diag = Hamiltonian(pauli_string_list=term_list)
     variational_unitary = VariationalUnitary(h_off_diag, number_of_layer=3, time=1.0)
-    opt = Optimizer(variation_unitary=variational_unitary)
-    assert np.isclose(opt.c2_squared(), 4.444444444444444)
-    res = opt.get_minumum_c2_squared()
+    opt = Optimizer()
+    assert np.isclose(
+        variational_unitary.c2_squared(
+            variational_unitary.get_initial_trotter_vector(),
+        ),
+        4.444444444444444,
+    )
+    res = opt.get_minumum_c2_squared(variational_unitary)
     assert res[0].fun < 1e-10
