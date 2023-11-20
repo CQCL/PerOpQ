@@ -32,7 +32,7 @@ def test_optimizer() -> None:
         ),
         0.25 * 2.66666666666666,
     )
-    res = opt.get_minumum_c2_squared(variational_unitary)
+    res = opt.optimize(variational_unitary)
     assert res[0].fun < 1e-10
     # XY+YZ+X+Z
     term_list = []
@@ -53,5 +53,5 @@ def test_optimizer() -> None:
         ),
         4.444444444444444,
     )
-    res = opt.get_minumum_c2_squared(variational_unitary)
+    res = opt.optimize(variational_unitary)
     assert res[0].fun < 1e-10

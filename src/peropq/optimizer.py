@@ -10,7 +10,7 @@ from peropq.variational_unitary import VariationalUnitary
 class Optimizer:
     """Class performing the optimizer."""
 
-    def get_minumum_c2_squared(
+    def optimize(
         self,
         variational_unitary: VariationalUnitary,
         initial_guess: Sequence[float] = [],
