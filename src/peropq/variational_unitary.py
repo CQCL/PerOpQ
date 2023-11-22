@@ -28,8 +28,8 @@ class VariationalUnitary:
         :param R number of steps for the optimization.
         :param t final time to up to which one wants to perform the time evolution.
         """
-        self.hamiltonian: Hamiltonian = hamiltonian
         self.n_terms: int = hamiltonian.get_n_terms()
+        self.pauli_string_list: Sequence[PauliString] = hamiltonian.pauli_string_list
         self.depth: int = number_of_layer
         self.theta: npt.NDArray = np.zeros((number_of_layer, self.n_terms))
         self.cjs: Sequence[complex] = hamiltonian.get_cjs()
@@ -96,10 +96,10 @@ class VariationalUnitary:
         index_pairs: list[tuple[int, int]] = []
         i = 0
         for j_prime, h_j_prime in enumerate(
-            self.hamiltonian.pauli_string_list,
+            self.pauli_string_list,
         ):
             for j in range(j_prime + 1, self.n_terms):
-                h_j = self.hamiltonian.pauli_string_list[j]
+                h_j = self.pauli_string_list[j]
                 commutator = get_commutator_pauli_tensors(h_j, h_j_prime)
                 if commutator:
                     index_pairs.append((j, j_prime))

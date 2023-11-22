@@ -1,17 +1,19 @@
 from collections.abc import Sequence
-from dataclasses import dataclass
 
 from peropq import pauli
 
 
-@dataclass
 class Hamiltonian:
     """Class representing the Hamilonian."""
 
-    pauli_string_list: Sequence[pauli.PauliString]
+    def __init__(self, pauli_string_list: Sequence[pauli.PauliString]) -> None:
+        """
+        Initialization.
 
-    def __post_init__(self) -> None:
-        """Initialize the Pauli strings with coeff 1.0 and store the coefficients in self.cjs."""
+        param: pauli_string_list contains all the terms of the hamiltonian.
+        """
+        self.pauli_string_list = pauli_string_list
+        # Initialize the Pauli strings with coeff 1.0 and store the coefficients in self.cjs.
         cjs: list[complex] = []
         for pauli_string in self.pauli_string_list:
             cjs.append(pauli_string.coefficient)
