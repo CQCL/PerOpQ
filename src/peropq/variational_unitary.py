@@ -47,8 +47,11 @@ class VariationalUnitary:
         :param new_array the new array containing the variational parameters. It's shape must be (R - 1, n_terms).
         """
         if new_array.shape != (self.depth - 1, self.n_terms):
-            error_message = "Wrong length provided."
-            raise ValueError(error_message)
+            if self.depth == 1 and new_array.shape == (1, self.n_terms):
+                pass
+            else:
+                error_message = "Wrong length provided."
+                raise ValueError(error_message)
         for j in range(self.n_terms):
             for r in range(self.depth - 1):
                 self.theta[r, j] = new_array[r, j]
@@ -58,15 +61,23 @@ class VariationalUnitary:
 
     def get_initial_trotter_vector(self) -> npt.NDArray:
         """Get the variational parameters corresponding to the Trotterization. Useful to initialize the optimization."""
-        theta_trotter: npt.NDArray = np.zeros((self.depth - 1, self.n_terms))
-        for j in range(self.n_terms):
-            for r in range(self.depth - 1):
-                theta_trotter[r, j] = self.cjs[j] * self.time / self.depth
+        if self.depth > 1:
+            theta_trotter: npt.NDArray = np.zeros((self.depth - 1, self.n_terms))
+            for j in range(self.n_terms):
+                for r in range(self.depth - 1):
+                    theta_trotter[r, j] = self.cjs[j] * self.time / self.depth
+        else:
+            theta_trotter: npt.NDArray = np.zeros((self.depth, self.n_terms))
+            for j in range(self.n_terms):
+                theta_trotter[0, j] = self.cjs[j] * self.time
         return theta_trotter
 
     def flatten_theta(self, theta: npt.NDArray) -> npt.NDArray:
         """Returns the variational parameters as flatten (R-1)*n_terms array. Useful to pass to a minimization function."""
-        return np.array(theta).reshape((self.depth - 1) * self.n_terms)
+        if self.depth > 1:
+            return np.array(theta).reshape((self.depth - 1) * self.n_terms)
+        else:
+            return np.array(theta).reshape(self.n_terms)
 
     def set_theta_to_trotter(self) -> None:
         """Sets the variational parameters to the Trotter parameters."""
@@ -152,10 +163,18 @@ class VariationalUnitary:
         """
         if not self.trace_calculated:
             self.calculate_traces()
-        if np.array(theta).shape[0] != 0:
+        if np.array(theta).shape[0] > self.n_terms:
             theta_new = np.array(theta).reshape(
                 (
                     self.depth - 1,
+                    self.n_terms,
+                ),
+            )
+            self.update_theta(theta_new)
+        if np.array(theta).shape[0] == self.n_terms:
+            theta_new = np.array(theta).reshape(
+                (
+                    1,
                     self.n_terms,
                 ),
             )

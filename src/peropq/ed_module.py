@@ -1,4 +1,6 @@
+import scipy
 import scipy.sparse as sp  # type: ignore[import-untyped]
+from numpy import typing as npt
 
 from peropq.hamiltonian import Hamiltonian
 from peropq.pauli import Pauli, PauliString
@@ -48,6 +50,15 @@ class ExactDiagonalization:
             )
         return sp.csc_matrix(sparse_string)
 
+    def get_hamiltonian_matrix(self, hamiltonian: Hamiltonian):
+        """param: hamiltonian to be converted to sparse."""
+        hamiltonian_matrix = self.get_sparse(hamiltonian.pauli_string_list[0])
+        for i_string in range(1, len(hamiltonian.pauli_string_list)):
+            hamiltonian_matrix += self.get_sparse(
+                hamiltonian.pauli_string_list[i_string],
+            )
+        return hamiltonian_matrix
+
     def get_continuous_time_evolution(
         self,
         hamiltonian: Hamiltonian,
@@ -56,14 +67,10 @@ class ExactDiagonalization:
         """
         Get the continuous time evolution of an Hamiltonian.
 
-        param: hamiltonian Which needs to be time evolved.
+        param: hamiltonian governing the dynamics
         param: time at which we want to time evolve.
         """
-        hamiltonian_matrix = self.get_sparse(hamiltonian.pauli_string_list[0])
-        for i_string in range(1, len(hamiltonian.pauli_string_list)):
-            hamiltonian_matrix += self.get_sparse(
-                hamiltonian.pauli_string_list[i_string],
-            )
+        hamiltonian_matrix = self.get_hamiltonian_matrix(hamiltonian)
         return sp.linalg.expm(-1j * time * hamiltonian_matrix)
 
     def get_variational_evolution(
@@ -84,6 +91,35 @@ class ExactDiagonalization:
                     * self.get_sparse(term),
                 )
         return u_sparse
+
+    def apply_continuous_to_state(
+        self, hamiltonian: Hamiltonian, time: float, state: npt.NDArray
+    ) -> npt.NDArray:
+        """
+        Apply the continuous time evolution.
+
+        param: hamiltonian governing the dynamics
+        param: time at which we want to time evolve.
+        param: state to be evolved.
+        """
+        hamiltonian_matrix = self.get_hamiltonian_matrix(hamiltonian)
+        new_state = scipy.sparse.linalg.expm_multiply(
+            -1j * time * hamiltonian_matrix, state
+        )
+        return new_state
+
+    def apply_variational_to_state(
+        self, variational_unitary: VariationalUnitary, state: npt.NDArray
+    ) -> npt.NDArray:
+        """
+        Apply the variational unitary to a state.
+
+        param: variational_unitary to be applied
+        param: state on which the unitary is applied
+        """
+        unitary = self.get_variational_evolution(variational_unitary)
+        new_state = unitary @ state
+        return new_state
 
     def get_error(
         self,
