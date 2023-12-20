@@ -5,6 +5,7 @@ import numpy.typing as npt
 import scipy  # type: ignore[import-untyped]
 
 from peropq.bch import VariationalNorm
+from peropq.hamiltonian import Hamiltonian
 from peropq.variational_unitary import VariationalUnitary
 
 
@@ -62,3 +63,35 @@ class Optimizer:
         return optimized_results, variational_unitary.c2_squared(
             theta=optimized_results.x,
         )
+
+    def optimize_steps(
+        self,
+        hamiltonian: Hamiltonian,
+        final_time: float,
+        order: float,
+        dt_optimize: float,
+    ) -> tuple[scipy.optimize.OptimizeResult, VariationalUnitary]:
+        """
+        Try to optimize with increasing time steps instead of using Trotter
+        """
+        variational_unitary = VariationalUnitary(hamiltonian, 3, dt_optimize)
+        x0 = variational_unitary.get_initial_trotter_vector()
+        x0 = variational_unitary.flatten_theta(x0)
+        variational_norm = VariationalNorm(variational_unitary, order=2)
+        variational_norm.get_commutators()
+        variational_norm.get_traces()
+        optimized_results = scipy.optimize.minimize(variational_norm.calculate_norm, x0)
+        evolve_to_time = 2 * dt_optimize
+        while evolve_to_time < final_time:
+            print("evolve_to_time ", evolve_to_time)
+            variational_unitary = VariationalUnitary(hamiltonian, 3, evolve_to_time)
+            x0 = variational_unitary.get_initial_trotter_vector()
+            x0 = variational_unitary.flatten_theta(x0)
+            variational_norm = VariationalNorm(variational_unitary, order=2)
+            variational_norm.get_commutators()
+            variational_norm.get_traces()
+            optimized_results = scipy.optimize.minimize(
+                variational_norm.calculate_norm, optimized_results.x
+            )
+            evolve_to_time += dt_optimize
+        return optimized_results, variational_unitary

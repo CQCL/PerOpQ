@@ -29,7 +29,8 @@ class NormTerm:
 
 def commutator(aterm: NormTerm, other: NormTerm) -> NormTerm:
     commutator_string = commutators.get_commutator_pauli_tensors(
-        aterm.pauli_string, other.pauli_string
+        aterm.pauli_string,
+        other.pauli_string,
     )
     order: int = aterm.order + other.order
     coefficient: float = aterm.coefficient * other.coefficient
@@ -60,8 +61,12 @@ class VariationalNorm:
         self.terms.append(new_term)
         # Second order:
         commutator_list: list[NormTerm] = self.compute_commutator_sum(
-            [new_term], self.terms
+            [new_term],
+            self.terms,
         )
+        # Third order:
+        if self.order >= 3:
+            pass
         for norm_term in commutator_list:
             if norm_term.order <= self.order:
                 self.terms.append(norm_term)
