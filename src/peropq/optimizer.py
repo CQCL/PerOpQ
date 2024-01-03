@@ -42,7 +42,9 @@ class Optimizer:
         variational_unitary: VariationalUnitary,
         order: float,
         initial_guess: Sequence[float] = [],
-    ) -> tuple[scipy.optimize.OptimizeResult, float]:
+        tol: float = 0,
+        unconstrained=False,
+    ) -> scipy.optimize.OptimizeResult:
         """
         Perform the minimization.
 
@@ -56,13 +58,30 @@ class Optimizer:
         else:
             x0 = variational_unitary.get_initial_trotter_vector()
             x0 = variational_unitary.flatten_theta(x0)
-        variational_norm = VariationalNorm(variational_unitary, order=2)
-        variational_norm.get_commutators()
-        variational_norm.get_traces()
-        optimized_results = scipy.optimize.minimize(variational_norm.calculate_norm, x0)
-        return optimized_results, variational_unitary.c2_squared(
-            theta=optimized_results.x,
+        variational_norm = VariationalNorm(
+            variational_unitary, order=order, unconstrained=unconstrained
         )
+        variational_norm.get_commutators()
+        print("terms order 0 ")
+        for aterm in variational_norm.terms[0]:
+            aterm.pretty_print()
+
+        print("terms order 1 ")
+        for aterm in variational_norm.terms[1]:
+            aterm.pretty_print()
+        import sys
+
+        sys.exit()
+        variational_norm.get_traces()
+        if tol == 0:
+            optimized_results = scipy.optimize.minimize(
+                variational_norm.calculate_norm, x0
+            )
+        else:
+            optimized_results = scipy.optimize.minimize(
+                variational_norm.calculate_norm, x0, tol=tol
+            )
+        return optimized_results
 
     def optimize_steps(
         self,
@@ -91,7 +110,8 @@ class Optimizer:
             variational_norm.get_commutators()
             variational_norm.get_traces()
             optimized_results = scipy.optimize.minimize(
-                variational_norm.calculate_norm, optimized_results.x
+                variational_norm.calculate_norm,
+                optimized_results.x,
             )
             evolve_to_time += dt_optimize
         return optimized_results, variational_unitary

@@ -32,18 +32,18 @@ def test_optimizer() -> None:
     )
     # Try to get c2_squared via the bch formula
     variational_unitary.set_theta_to_trotter()
-    variational_norm = VariationalNorm(variational_unitary, order=2)
+    variational_norm = VariationalNorm(variational_unitary, order=3)
     variational_norm.get_commutators()
     variational_norm.get_traces()
     norm_var = variational_norm.calculate_norm(
-        variational_unitary.get_initial_trotter_vector()
+        variational_unitary.get_initial_trotter_vector(),
     )
     print("norm_var ", norm_var)
     print("c2_old ", c2_old)
     variational_unitary.set_theta_to_trotter()
     res = opt.optimize(variational_unitary)
     variational_unitary.set_theta_to_trotter()
-    res2 = opt.optimize_arbitrary(variational_unitary, order=2)
+    res2 = opt.optimize_arbitrary(variational_unitary, order=3)
     print(res)
     print(res2)
     import sys
@@ -78,7 +78,7 @@ def test_optimizer() -> None:
     variational_norm.get_commutators()
     variational_norm.get_traces()
     norm_var = variational_norm.calculate_norm(
-        variational_unitary.get_initial_trotter_vector()
+        variational_unitary.get_initial_trotter_vector(),
     )
     print("norm_var ", norm_var)
     print("c2_old ", c2_old)

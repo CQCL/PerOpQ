@@ -163,6 +163,8 @@ class VariationalUnitary:
         """
         if not self.trace_calculated:
             self.calculate_traces()
+        print("shape ", theta.shape)
+        breakpoint()
         if np.array(theta).shape[0] > self.n_terms:
             theta_new = np.array(theta).reshape(
                 (

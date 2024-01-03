@@ -26,6 +26,15 @@ class NormTerm:
     coefficient: float
     theta_indices: list[int]
 
+    def pretty_print(self):
+        pauli_print_string = ""
+        pauli_print_string += str(self.pauli_string.coefficient)
+        pauli_print_string += "*"
+        for akey in self.pauli_string.qubit_pauli_map.keys():
+            pauli_print_string += str(self.pauli_string.qubit_pauli_map[akey])
+            pauli_print_string += str(akey) + " "
+        print(self.coefficient, "*", pauli_print_string)
+
 
 def commutator(aterm: NormTerm, other: NormTerm) -> NormTerm:
     commutator_string = commutators.get_commutator_pauli_tensors(
@@ -40,12 +49,16 @@ def commutator(aterm: NormTerm, other: NormTerm) -> NormTerm:
 
 
 class VariationalNorm:
-    def __init__(self, variational_unitary: VariationalUnitary, order: int):
+    def __init__(
+        self, variational_unitary: VariationalUnitary, order: int, unconstrained=False
+    ):
         self.variational_unitary = variational_unitary
         self.term_norm = []
         self.order = order
-        self.terms: list[NormTerm] = []
-        self.coefficients: list[complex] = []
+        self.terms: dict[list[NormTerm]] = {}  # indices:(order,term_index)
+        for order_index in range(order):
+            self.terms[order_index] = []
+        self.unconstrained = unconstrained
 
     def compute_commutator_sum(self, term_list1: NormTerm, term_list2: NormTerm):
         result_list: list[NormTerm] = []
@@ -58,34 +71,50 @@ class VariationalNorm:
 
     def add_term(self, new_term: NormTerm):  # TODO: take care of coefficient
         # First order:
-        self.terms.append(new_term)
+        self.terms[0].append(new_term)
         # Second order:
-        commutator_list: list[NormTerm] = self.compute_commutator_sum(
-            [new_term],
-            self.terms,
-        )
+        if self.order > 1:
+            x_y_2: list[NormTerm] = self.compute_commutator_sum(
+                [new_term],
+                self.terms[0],
+            )
+            # Do some sanity check
+            for norm_term in x_y_2:
+                norm_term.coefficient = -0.5
+                print(norm_term)
+                if norm_term.order != 2:
+                    message = "second order contained terms of higher order"
+                    raise RuntimeError(message)
+            for norm_term in x_y_2:
+                print("norm term", norm_term)
+            self.terms[1] += x_y_2
+            # breakpoint()
         # Third order:
         if self.order >= 3:
-            pass
-        for norm_term in commutator_list:
-            if norm_term.order <= self.order:
-                self.terms.append(norm_term)
+            x_x_y_3 = self.compute_commutator_sum([new_term], self.terms[0])
+            y_y_x_3 = self.compute_commutator_sum(self.terms[0], [new_term])
+            for i_norm_term, norm_term in enumerate(x_x_y_3):
+                norm_term.coefficient = 1.0 / 12.0
+            for i_norm_term, norm_term in enumerate(y_y_x_3):
+                norm_term.coefficient = -(1.0 / 12.0)
+            self.terms[2] += x_x_y_3
+            self.terms[2] += y_y_x_3
 
     def get_commutators(self):
         layer = 0
         first_norm_term = NormTerm(
             pauli_string=self.variational_unitary.pauli_string_list[0],
             order=1,
-            coefficient=1,
+            coefficient=-1j,
             theta_indices=[(0, 0)],
         )
-        self.terms.append(first_norm_term)
+        self.terms[0].append(first_norm_term)
         # First add all the terms for the first layer
         for i_term in range(1, self.variational_unitary.n_terms):
             new_term = NormTerm(
                 pauli_string=self.variational_unitary.pauli_string_list[i_term],
                 order=1,
-                coefficient=1,
+                coefficient=-1j,
                 theta_indices=[(0, i_term)],
             )
             self.add_term(new_term)
@@ -96,17 +125,34 @@ class VariationalNorm:
                 new_term = NormTerm(
                     pauli_string=self.variational_unitary.pauli_string_list[i_term],
                     order=1,
-                    coefficient=1,
+                    coefficient=-1j,
                     theta_indices=[(layer, i_term)],
                 )
                 self.add_term(new_term)
             layer += 1
+        # Add the Trotter terms with a minus for the unconstrained unitary
+        # Add this only in the trace!!
+        if self.unconstrained:
+            for i_term in range(self.variational_unitary.n_terms):
+                new_term = NormTerm(
+                    pauli_string=self.variational_unitary.pauli_string_list[i_term],
+                    order=1,
+                    coefficient=1j
+                    * self.variational_unitary.cjs[i_term]
+                    * self.variational_unitary.time,
+                    theta_indices=[(None, None)],
+                )
+                self.add_term(new_term)
 
     def get_traces(self):
         self.indices: list[tuple] = []
         self.trace_list: list[float] = []
-        for i_term, a_term in enumerate(self.terms):
-            for j_term, another_term in enumerate(self.terms):
+        self.all_the_terms: list[NormTerm] = []
+        for order_index in range(self.order):
+            for a_term in self.terms[order_index]:
+                self.all_the_terms.append(a_term)
+        for i_term, a_term in enumerate(self.all_the_terms):
+            for j_term, another_term in enumerate(self.all_the_terms):
                 product_commutators: PauliString = (
                     a_term.pauli_string * another_term.pauli_string
                 )
@@ -118,12 +164,21 @@ class VariationalNorm:
 
     def calculate_norm(self, theta):
         if np.array(theta).shape[0] > self.variational_unitary.n_terms:
-            theta_new = np.array(theta).reshape(
-                (
-                    self.variational_unitary.depth - 1,
-                    self.variational_unitary.n_terms,
-                ),
-            )
+            # TODO: write a function unflatten theta
+            try:
+                theta_new = np.array(theta).reshape(
+                    (
+                        self.variational_unitary.depth - 1,
+                        self.variational_unitary.n_terms,
+                    ),
+                )
+            except:
+                theta_new = np.array(theta).reshape(
+                    (
+                        self.variational_unitary.depth,
+                        self.variational_unitary.n_terms,
+                    ),
+                )
             self.variational_unitary.update_theta(theta_new)
         if np.array(theta).shape[0] == self.variational_unitary.n_terms:
             theta_new = np.array(theta).reshape(
@@ -134,28 +189,22 @@ class VariationalNorm:
             )
             self.variational_unitary.update_theta(theta_new)
         s_norm: float = 0
+        if self.unconstrained:
+            min_order = 0
+        else:
+            min_order = 1
         for i_trace, trace in enumerate(self.trace_list):
             theta_coeff: float = 1.0
-            left_term = self.terms[self.indices[i_trace][0]]
-            right_term = self.terms[self.indices[i_trace][1]]
-            if left_term.order > 1 and right_term.order > 1:
+            left_term = self.all_the_terms[self.indices[i_trace][0]]
+            right_term = self.all_the_terms[self.indices[i_trace][1]]
+            if left_term.order > min_order and right_term.order > min_order:
                 for i_theta in left_term.theta_indices:
-                    theta_coeff *= self.variational_unitary.theta[i_theta]
-                    if left_term.order == 2:
-                        theta_coeff *= 0.5
-                    else:
-                        print("order ", left_term.order, " is not implemented")
-                        import sys
-
-                        sys.exit()
+                    if None not in i_theta:
+                        theta_coeff *= self.variational_unitary.theta[i_theta]
                 for i_theta in right_term.theta_indices:
-                    theta_coeff *= self.variational_unitary.theta[i_theta]
-                    if right_term.order == 2:
-                        theta_coeff *= 0.5
-                    else:
-                        print("order ", right_term.order, " is not implemented")
-                        import sys
-
-                        sys.exit()
-                s_norm += theta_coeff * trace
-        return -1.0 * s_norm
+                    if None not in i_theta:
+                        theta_coeff *= self.variational_unitary.theta[i_theta]
+                s_norm += (
+                    theta_coeff * left_term.coefficient * right_term.coefficient * trace
+                )
+        return -s_norm
