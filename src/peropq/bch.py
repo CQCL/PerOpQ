@@ -25,15 +25,15 @@ class NormTerm:
     order: int
     coefficient: float
     theta_indices: list[int]
-
+    
     def pretty_print(self):
-        pauli_print_string = ""
-        pauli_print_string += str(self.pauli_string.coefficient)
-        pauli_print_string += "*"
+        pauli_print_string = ''
+        pauli_print_string+=str(self.pauli_string.coefficient)
+        pauli_print_string+='*'
         for akey in self.pauli_string.qubit_pauli_map.keys():
-            pauli_print_string += str(self.pauli_string.qubit_pauli_map[akey])
-            pauli_print_string += str(akey) + " "
-        print(self.coefficient, "*", pauli_print_string)
+            pauli_print_string+=str(self.pauli_string.qubit_pauli_map[akey])
+            pauli_print_string+=str(akey)+' '
+        print(self.coefficient,'*',pauli_print_string)
 
 
 def commutator(aterm: NormTerm, other: NormTerm) -> NormTerm:
@@ -49,15 +49,13 @@ def commutator(aterm: NormTerm, other: NormTerm) -> NormTerm:
 
 
 class VariationalNorm:
-    def __init__(
-        self, variational_unitary: VariationalUnitary, order: int, unconstrained=False
-    ):
+    def __init__(self, variational_unitary: VariationalUnitary, order: int,unconstrained = False):
         self.variational_unitary = variational_unitary
         self.term_norm = []
         self.order = order
-        self.terms: dict[list[NormTerm]] = {}  # indices:(order,term_index)
+        self.terms: dict[list[NormTerm]] ={} # indices:(order,term_index)
         for order_index in range(order):
-            self.terms[order_index] = []
+            self.terms[order_index]=[]
         self.unconstrained = unconstrained
 
     def compute_commutator_sum(self, term_list1: NormTerm, term_list2: NormTerm):
@@ -70,35 +68,41 @@ class VariationalNorm:
         return result_list
 
     def add_term(self, new_term: NormTerm):  # TODO: take care of coefficient
+        print("calling add term")
         # First order:
         self.terms[0].append(new_term)
         # Second order:
-        if self.order > 1:
+        if self.order>1:
             x_y_2: list[NormTerm] = self.compute_commutator_sum(
                 [new_term],
                 self.terms[0],
             )
-            # Do some sanity check
+            #Do some sanity check
             for norm_term in x_y_2:
-                norm_term.coefficient = -0.5
+                norm_term.coefficient=-0.5
                 print(norm_term)
-                if norm_term.order != 2:
-                    message = "second order contained terms of higher order"
+                if norm_term.order!=2:
+                    message = 'second order contained terms of higher order'
                     raise RuntimeError(message)
             for norm_term in x_y_2:
-                print("norm term", norm_term)
-            self.terms[1] += x_y_2
-            # breakpoint()
+                print("norm term",norm_term)
+            print("from new term ")
+            new_term.pretty_print()
+            print("-----")
+            for aterm in x_y_2:
+                aterm.pretty_print()
+            print("-----")
+            self.terms[1]+=x_y_2
         # Third order:
         if self.order >= 3:
-            x_x_y_3 = self.compute_commutator_sum([new_term], self.terms[0])
-            y_y_x_3 = self.compute_commutator_sum(self.terms[0], [new_term])
-            for i_norm_term, norm_term in enumerate(x_x_y_3):
-                norm_term.coefficient = 1.0 / 12.0
-            for i_norm_term, norm_term in enumerate(y_y_x_3):
-                norm_term.coefficient = -(1.0 / 12.0)
-            self.terms[2] += x_x_y_3
-            self.terms[2] += y_y_x_3
+            x_x_y_3 = self.compute_commutator_sum([new_term],self.terms[0])
+            y_y_x_3 = self.compute_commutator_sum(self.terms[0],[new_term])
+            for i_norm_term,norm_term in enumerate(x_x_y_3):
+                norm_term.coefficient = (1.0/12.0)
+            for i_norm_term,norm_term in enumerate(y_y_x_3):
+                norm_term.coefficient = -(1.0/12.0)
+            self.terms[2]+=x_x_y_3
+            self.terms[2]+=y_y_x_3
 
     def get_commutators(self):
         layer = 0
@@ -117,6 +121,7 @@ class VariationalNorm:
                 coefficient=-1j,
                 theta_indices=[(0, i_term)],
             )
+            print("add term")
             self.add_term(new_term)
         # Loop over the higher layers to add all the terms and include them in the calculation
         layer += 1
@@ -133,21 +138,20 @@ class VariationalNorm:
         # Add the Trotter terms with a minus for the unconstrained unitary
         # Add this only in the trace!!
         if self.unconstrained:
-            for i_term in range(self.variational_unitary.n_terms):
+            for i_term in range(0, self.variational_unitary.n_terms):
                 new_term = NormTerm(
                     pauli_string=self.variational_unitary.pauli_string_list[i_term],
                     order=1,
-                    coefficient=1j
-                    * self.variational_unitary.cjs[i_term]
-                    * self.variational_unitary.time,
-                    theta_indices=[(None, None)],
+                    coefficient=1j*self.variational_unitary.cjs[i_term]*self.variational_unitary.time,
+                    theta_indices=[(None,None)],
                 )
-                self.add_term(new_term)
+                self.terms[0].append(new_term)
+            
 
     def get_traces(self):
         self.indices: list[tuple] = []
         self.trace_list: list[float] = []
-        self.all_the_terms: list[NormTerm] = []
+        self.all_the_terms:list[NormTerm] = []
         for order_index in range(self.order):
             for a_term in self.terms[order_index]:
                 self.all_the_terms.append(a_term)
@@ -164,7 +168,7 @@ class VariationalNorm:
 
     def calculate_norm(self, theta):
         if np.array(theta).shape[0] > self.variational_unitary.n_terms:
-            # TODO: write a function unflatten theta
+            #TODO: write a function unflatten theta
             try:
                 theta_new = np.array(theta).reshape(
                     (
@@ -175,7 +179,7 @@ class VariationalNorm:
             except:
                 theta_new = np.array(theta).reshape(
                     (
-                        self.variational_unitary.depth,
+                        self.variational_unitary.depth ,
                         self.variational_unitary.n_terms,
                     ),
                 )
@@ -190,21 +194,19 @@ class VariationalNorm:
             self.variational_unitary.update_theta(theta_new)
         s_norm: float = 0
         if self.unconstrained:
-            min_order = 0
+            min_order=0
         else:
-            min_order = 1
+            min_order=1
         for i_trace, trace in enumerate(self.trace_list):
             theta_coeff: float = 1.0
             left_term = self.all_the_terms[self.indices[i_trace][0]]
             right_term = self.all_the_terms[self.indices[i_trace][1]]
             if left_term.order > min_order and right_term.order > min_order:
                 for i_theta in left_term.theta_indices:
-                    if None not in i_theta:
+                    if not None in i_theta:
                         theta_coeff *= self.variational_unitary.theta[i_theta]
                 for i_theta in right_term.theta_indices:
-                    if None not in i_theta:
+                    if not None in i_theta:
                         theta_coeff *= self.variational_unitary.theta[i_theta]
-                s_norm += (
-                    theta_coeff * left_term.coefficient * right_term.coefficient * trace
-                )
+                s_norm += theta_coeff*left_term.coefficient*right_term.coefficient*trace
         return -s_norm

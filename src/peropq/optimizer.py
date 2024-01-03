@@ -69,9 +69,6 @@ class Optimizer:
         print("terms order 1 ")
         for aterm in variational_norm.terms[1]:
             aterm.pretty_print()
-        import sys
-
-        sys.exit()
         variational_norm.get_traces()
         if tol == 0:
             optimized_results = scipy.optimize.minimize(
