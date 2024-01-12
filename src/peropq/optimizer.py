@@ -59,24 +59,29 @@ class Optimizer:
             x0 = variational_unitary.get_initial_trotter_vector()
             x0 = variational_unitary.flatten_theta(x0)
         variational_norm = VariationalNorm(
-            variational_unitary, order=order, unconstrained=unconstrained
+            variational_unitary,
+            order=order,
+            unconstrained=unconstrained,
         )
         variational_norm.get_commutators()
-        print("terms order 0 ")
-        for aterm in variational_norm.terms[0]:
-            aterm.pretty_print()
-
-        print("terms order 1 ")
-        for aterm in variational_norm.terms[1]:
-            aterm.pretty_print()
+        try:
+            for aterm in variational_norm.terms[2]:
+                aterm.pretty_print()
+        except:
+            pass
         variational_norm.get_traces()
         if tol == 0:
             optimized_results = scipy.optimize.minimize(
-                variational_norm.calculate_norm, x0
+                variational_norm.calculate_norm,
+                x0,
+                method="Nelder-Mead",
             )
         else:
             optimized_results = scipy.optimize.minimize(
-                variational_norm.calculate_norm, x0, tol=tol
+                variational_norm.calculate_norm,
+                x0,
+                tol=tol,
+                method="Nelder-Mead",
             )
         return optimized_results
 

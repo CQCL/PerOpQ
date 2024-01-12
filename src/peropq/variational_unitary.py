@@ -190,3 +190,115 @@ class VariationalUnitary:
             self.trace_tensor.reshape((s1 * s2, s3 * s4)),
         )
         return np.real(-chi_tensor.T @ trace_tensor @ chi_tensor)
+
+    def c2_squared_test(self, theta: npt.ArrayLike = ()) -> float:
+        self.update_theta(theta)
+        full_term_list = []
+        for layer in range(self.depth):
+            for iterm in range(self.n_terms):
+                full_term_list.append(
+                    -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm]
+                )
+
+        number_of_terms = len(full_term_list)
+        commutator_list = []
+        for j in range(number_of_terms):
+            for i in range(j, number_of_terms):
+                commutator_list.append(
+                    0.5
+                    * get_commutator_pauli_tensors(full_term_list[i], full_term_list[j])
+                )
+        trace_sum = 0
+        for commutator_i in commutator_list:
+            for commutator_j in commutator_list:
+                product_commutator: PauliString = commutator_i * commutator_j
+                # print("product commutator ",product_commutator)
+                if product_commutator != 0.0:
+                    trace_sum += product_commutator.normalized_trace()
+        return -trace_sum
+
+    def c3_squared_test(self, theta: npt.ArrayLike = ()) -> float:
+        self.update_theta(theta)
+        full_term_list = []
+        theta_index_list = []
+        for layer in range(self.depth):
+            for iterm in range(self.n_terms):
+                full_term_list.append(
+                    -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm]
+                )
+                theta_index_list.append((layer, iterm))
+        number_of_terms = len(full_term_list)
+        # Second order
+        commutator_list = []
+        indices_list = []
+        for j in range(number_of_terms):
+            for i in range(j, number_of_terms):
+                commutator_list.append(
+                    0.5
+                    * get_commutator_pauli_tensors(full_term_list[i], full_term_list[j])
+                )
+                indices_list.append((theta_index_list[i], theta_index_list[j]))
+        # Third order
+        # First term
+        for j in range(number_of_terms):
+            for k in range(number_of_terms):
+                if j != k:
+                    com = get_commutator_pauli_tensors(
+                        full_term_list[j], full_term_list[k]
+                    )
+                    if com != 0.0:
+                        com_com = get_commutator_pauli_tensors(full_term_list[j], com)
+                        commutator_list.append(1.0 / 12.0 * com_com)
+                        indices_list.append(
+                            (
+                                theta_index_list[j],
+                                theta_index_list[j],
+                                theta_index_list[k],
+                            )
+                        )
+        # Second term
+        for l in range(number_of_terms):
+            for k in range(l + 1, number_of_terms):
+                for j in range(k + 1, number_of_terms):
+                    com_kl = get_commutator_pauli_tensors(
+                        full_term_list[k], full_term_list[l]
+                    )
+                    if com_kl != 0.0:
+                        com_jkl = get_commutator_pauli_tensors(
+                            full_term_list[j], com_kl
+                        )
+                        commutator_list.append(1.0 / 6.0 * com_jkl)
+                        indices_list.append(
+                            (
+                                theta_index_list[j],
+                                theta_index_list[k],
+                                theta_index_list[l],
+                            )
+                        )
+                    com_kj = get_commutator_pauli_tensors(
+                        full_term_list[k], full_term_list[j]
+                    )
+                    if com_kj != 0.0:
+                        com_lkj = get_commutator_pauli_tensors(
+                            full_term_list[l], com_kj
+                        )
+                        commutator_list.append(1.0 / 6.0 * com_lkj)
+                        indices_list.append(
+                            (
+                                theta_index_list[l],
+                                theta_index_list[k],
+                                theta_index_list[j],
+                            )
+                        )
+
+        # Calculate traces:
+        trace_sum = 0.0
+        for i, commutator_i in enumerate(commutator_list):
+            if commutator_i != 0.0:
+                print(commutator_i, "theta ", indices_list[i], "  com  ")
+            for commutator_j in commutator_list:
+                product_commutator: PauliString = commutator_i * commutator_j
+                # print("product commutator ",product_commutator)
+                if product_commutator != 0.0:
+                    trace_sum -= product_commutator.normalized_trace()
+        return trace_sum
