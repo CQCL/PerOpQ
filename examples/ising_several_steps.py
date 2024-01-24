@@ -2,6 +2,7 @@ import copy
 
 import matplotlib.pyplot as plt
 import numpy as np
+from peropq.bch import VariationalNorm
 from peropq.ed_module import ExactDiagonalization as ED
 from peropq.hamiltonian import Hamiltonian
 from peropq.optimizer import Optimizer
@@ -22,8 +23,8 @@ z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
 bc_modifier = 1
-nx = 2
-ny = 2
+nx = 3
+ny = 3
 n = nx * ny
 for i in range(n):
     zi = PauliString.from_pauli_sequence(paulis=[Pauli.Z], start_qubit=i)
@@ -33,8 +34,8 @@ for i in range(n):
     yi = PauliString.from_pauli_sequence(paulis=[Pauli.Y], start_qubit=i)
     y_list.append(yi)
 term_list = []
-for i in range(n):
-    term_list.append(1.0 * z_list[i])
+# for i in range(n):
+#     term_list.append(1.0 * z_list[i])
 for i in range(n):
     term_list.append(1.0 * x_list[i])
 V = -1
@@ -62,7 +63,7 @@ for site in start_sites:
 
 # Ising model
 h_ising = Hamiltonian(pauli_string_list=term_list)
-time_list = [0.3]
+time_list = [0.001]
 ed = ED(number_of_qubits=n)
 h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
 
@@ -88,14 +89,47 @@ for time in time_list:
     variational_unitary.set_theta_to_trotter()
     # trotter_unitary = copy.deepcopy(variational_unitary)
     opt = Optimizer()
+    # test gradient
+    var_norm = VariationalNorm(
+        variational_unitary=variational_unitary, order=2, unconstrained=False
+    )
+    var_norm.get_commutators()
+    var_norm.get_traces()
+    norm_var = var_norm.calculate_norm(var_norm.variational_unitary.theta)
+    var_norm.get_analytical_gradient()
+    theta_flat = variational_unitary.flatten_theta(variational_unitary.theta)
+    grad = var_norm.get_numerical_gradient(theta_flat)
+    # approximate gradient
+    c2_theta = var_norm.calculate_norm(
+        variational_unitary.theta,
+    )
+    dt_grad = 0.0001
+    index_gradient = 6
+    theta_dt = copy.deepcopy(variational_unitary.theta)
+    theta_dt[0, index_gradient] = theta_dt[0, index_gradient] + dt_grad
+    variational_unitary.update_theta(theta_dt)
+    c2_theta_dt = var_norm.calculate_norm(variational_unitary.theta)
+    appr = (c2_theta_dt - c2_theta) / dt_grad
+    # analytical gradient
+    analytical = variational_unitary.c2_square_gradient_test(variational_unitary.theta)
+    print("c2_theta ", c2_theta)
+    print("c2_theta_dt", c2_theta_dt)
+    print("var_norm ", norm_var)
+    print("grad ", grad)
+    print("analytical ", analytical)
+    # print("appr ",grad[13]/appr)
+    print("appr ", appr)
+    ###############
     res = opt.optimize_arbitrary(
-        variational_unitary=variational_unitary, order=2, unconstrained=True
+        variational_unitary=variational_unitary,
+        order=2,
+        unconstrained=False,
     )
     print("res ", res)
     c2 = variational_unitary.c2_squared(variational_unitary.theta)
     print("c2 ", c2)
     c2_trotter = variational_unitary.c2_squared(
-        variational_unitary.get_initial_trotter_vector()
+        variational_unitary.get_initial_trotter_vector(),
     )
 # print("------")
 # print("constrained")
@@ -105,11 +139,10 @@ for time in time_list:
     trotter_unitary = copy.deepcopy(variational_unitary_c)
     opt = Optimizer()
     res = opt.optimize_arbitrary(
-        variational_unitary=variational_unitary_c,
-        order=3,
-        unconstrained=True,
-        initial_guess=variational_unitary.flatten_theta(variational_unitary.theta),
-    )
+        variational_unitary=variational_unitary_c, order=2, unconstrained=False
+    )  # ,
+    # initial_guess=variational_unitary.flatten_theta(variational_unitary_c.theta),
+    # )
     print("res ", res)
     # c2 = variational_unitary.c2_squared(variational_unitary.theta)
     # print("c2 ",c2)
@@ -123,10 +156,12 @@ state_continuous = copy.deepcopy(state_init)
 # Check that the norm is better for the variational unitary
 trotter_error = ed.get_error(trotter_unitary, hamiltonian=h_ising)
 variational_error = ed.get_error(
-    variational_unitary=variational_unitary, hamiltonian=h_ising
+    variational_unitary=variational_unitary,
+    hamiltonian=h_ising,
 )
 variational_c_error = ed.get_error(
-    variational_unitary=variational_unitary_c, hamiltonian=h_ising
+    variational_unitary=variational_unitary_c,
+    hamiltonian=h_ising,
 )
 print("trotter error", trotter_error)
 print("variational error order 2", variational_error)
@@ -135,22 +170,28 @@ print("variational error order 3", variational_c_error)
 for istep in range(10):
     state_trotter = ed.apply_variational_to_state(trotter_unitary, state_trotter)
     state_continuous = ed.apply_continuous_to_state(
-        hamiltonian=h_ising, time=time, state=state_continuous
+        hamiltonian=h_ising,
+        time=time,
+        state=state_continuous,
     )
     state_variational = ed.apply_variational_to_state(
-        variational_unitary, state_variational
+        variational_unitary,
+        state_variational,
     )
     state_variational_c = ed.apply_variational_to_state(
-        variational_unitary_c, state_variational_c
+        variational_unitary_c,
+        state_variational_c,
     )
 
     sz_expectation_value_trotter = expectation_value(state_trotter, z_list_sparse)
     sz_expectation_value_continuous = expectation_value(state_continuous, z_list_sparse)
     sz_expectation_value_variational = expectation_value(
-        state_variational, z_list_sparse
+        state_variational,
+        z_list_sparse,
     )
     sz_expectation_value_variational_c = expectation_value(
-        state_variational_c, z_list_sparse
+        state_variational_c,
+        z_list_sparse,
     )
 
     z_t_continous.append(sz_expectation_value_continuous)
@@ -160,10 +201,10 @@ for istep in range(10):
 
     energy_trotter.append(state_trotter.T.conj() @ h_ising_matrix @ state_trotter)
     energy_variational.append(
-        state_variational.T.conj() @ h_ising_matrix @ state_variational
+        state_variational.T.conj() @ h_ising_matrix @ state_variational,
     )
     energy_variational_c.append(
-        state_variational_c.T.conj() @ h_ising_matrix @ state_variational_c
+        state_variational_c.T.conj() @ h_ising_matrix @ state_variational_c,
     )
 
 z_array_continuous = np.array(z_t_continous)
@@ -211,7 +252,8 @@ plt.figure()
 plt.plot(np.abs(np.array(energy_trotter) - energy), label="trotter")
 plt.plot(np.abs(np.array(energy_variational) - energy), label="variational")
 plt.plot(
-    np.abs(np.array(energy_variational_c) - energy), label="variational constrained"
+    np.abs(np.array(energy_variational_c) - energy),
+    label="variational constrained",
 )
 plt.xlabel("time step")
 plt.ylabel("energy error")

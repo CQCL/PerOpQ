@@ -71,17 +71,17 @@ class Optimizer:
             pass
         variational_norm.get_traces()
         if tol == 0:
+            variational_norm.get_analytical_gradient()
             optimized_results = scipy.optimize.minimize(
                 variational_norm.calculate_norm,
                 x0,
-                method="Nelder-Mead",
+                jac=variational_norm.get_numerical_gradient,
             )
         else:
             optimized_results = scipy.optimize.minimize(
                 variational_norm.calculate_norm,
                 x0,
                 tol=tol,
-                method="Nelder-Mead",
             )
         return optimized_results
 

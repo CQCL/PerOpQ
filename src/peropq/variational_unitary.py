@@ -197,7 +197,7 @@ class VariationalUnitary:
         for layer in range(self.depth):
             for iterm in range(self.n_terms):
                 full_term_list.append(
-                    -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm]
+                    -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm],
                 )
 
         number_of_terms = len(full_term_list)
@@ -206,16 +206,107 @@ class VariationalUnitary:
             for i in range(j, number_of_terms):
                 commutator_list.append(
                     0.5
-                    * get_commutator_pauli_tensors(full_term_list[i], full_term_list[j])
+                    * get_commutator_pauli_tensors(
+                        full_term_list[i], full_term_list[j]
+                    ),
                 )
         trace_sum = 0
+        trace_list = []
         for commutator_i in commutator_list:
             for commutator_j in commutator_list:
                 product_commutator: PauliString = commutator_i * commutator_j
                 # print("product commutator ",product_commutator)
                 if product_commutator != 0.0:
+                    trace_list.append(normalized_trace())
                     trace_sum += product_commutator.normalized_trace()
+        print(trace_list)
+        breakpoint()
         return -trace_sum
+
+    def c2_square_gradient_test(self, theta: npt.ArrayLike = ()) -> npt.ArrayLike:
+        self.update_theta(theta)
+        full_term_list = []
+        tuple_list = []
+        for layer in range(self.depth):
+            for iterm in range(self.n_terms):
+                full_term_list.append(
+                    -1j * self.pauli_string_list[iterm],
+                )
+                tuple_list.append((layer, iterm))
+
+        number_of_terms = len(full_term_list)
+        commutator_list = []
+        indices_list = []
+        for j in range(number_of_terms):
+            for i in range(j, number_of_terms):
+                commutator_list.append(
+                    0.5
+                    * get_commutator_pauli_tensors(
+                        full_term_list[i], full_term_list[j]
+                    ),
+                )
+                indices_list.append((i, j))
+        grad = np.zeros((number_of_terms,))
+        for i_derivative in range(number_of_terms):
+            for i, commutator_i in enumerate(commutator_list):
+                for j, commutator_j in enumerate(commutator_list):
+                    full_theta_coeff = (
+                        self.theta[tuple_list[indices_list[i][0]]]
+                        * self.theta[tuple_list[indices_list[i][1]]]
+                        * self.theta[tuple_list[indices_list[j][0]]]
+                        * self.theta[tuple_list[indices_list[j][1]]]
+                    )
+                    product_commutator = commutator_i * commutator_j
+                    theta_coeff = 0.0
+                    print("i_derivative ", i_derivative)
+                    print(tuple_list[indices_list[i][0]])
+                    print(tuple_list[indices_list[i][1]])
+                    print(tuple_list[indices_list[j][0]])
+                    print(tuple_list[indices_list[j][1]])
+                    try:
+                        print("product_commutator.normalized_trace()")
+                        print(product_commutator.normalized_trace())
+                        # breakpoint()
+                    except:
+                        pass
+                    if i_derivative == indices_list[i][0]:
+                        coeff = (
+                            full_theta_coeff
+                            / self.theta[tuple_list[indices_list[i][0]]]
+                        )
+                        if product_commutator != 0.0:
+                            grad[i_derivative] -= (
+                                product_commutator.normalized_trace() * coeff
+                            )
+                    if i_derivative == indices_list[i][1]:
+                        coeff = (
+                            full_theta_coeff
+                            / self.theta[tuple_list[indices_list[i][1]]]
+                        )
+                        if product_commutator != 0.0:
+                            grad[i_derivative] -= (
+                                product_commutator.normalized_trace() * coeff
+                            )
+                    if i_derivative == indices_list[j][0]:
+                        coeff = (
+                            full_theta_coeff
+                            / self.theta[tuple_list[indices_list[j][0]]]
+                        )
+                        if product_commutator != 0.0:
+                            grad[i_derivative] -= (
+                                product_commutator.normalized_trace() * coeff
+                            )
+                    if i_derivative == indices_list[j][1]:
+                        coeff = (
+                            full_theta_coeff
+                            / self.theta[tuple_list[indices_list[j][1]]]
+                        )
+                        if product_commutator != 0.0:
+                            grad[i_derivative] -= (
+                                product_commutator.normalized_trace() * coeff
+                            )
+                    # print('grad ',grad[i_derivative])
+        return grad
 
     def c3_squared_test(self, theta: npt.ArrayLike = ()) -> float:
         self.update_theta(theta)
@@ -224,7 +315,7 @@ class VariationalUnitary:
         for layer in range(self.depth):
             for iterm in range(self.n_terms):
                 full_term_list.append(
-                    -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm]
+                    -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm],
                 )
                 theta_index_list.append((layer, iterm))
         number_of_terms = len(full_term_list)
@@ -235,7 +326,9 @@ class VariationalUnitary:
             for i in range(j, number_of_terms):
                 commutator_list.append(
                     0.5
-                    * get_commutator_pauli_tensors(full_term_list[i], full_term_list[j])
+                    * get_commutator_pauli_tensors(
+                        full_term_list[i], full_term_list[j]
+                    ),
                 )
                 indices_list.append((theta_index_list[i], theta_index_list[j]))
         # Third order
@@ -244,7 +337,8 @@ class VariationalUnitary:
             for k in range(number_of_terms):
                 if j != k:
                     com = get_commutator_pauli_tensors(
-                        full_term_list[j], full_term_list[k]
+                        full_term_list[j],
+                        full_term_list[k],
                     )
                     if com != 0.0:
                         com_com = get_commutator_pauli_tensors(full_term_list[j], com)
@@ -254,18 +348,20 @@ class VariationalUnitary:
                                 theta_index_list[j],
                                 theta_index_list[j],
                                 theta_index_list[k],
-                            )
+                            ),
                         )
         # Second term
         for l in range(number_of_terms):
             for k in range(l + 1, number_of_terms):
                 for j in range(k + 1, number_of_terms):
                     com_kl = get_commutator_pauli_tensors(
-                        full_term_list[k], full_term_list[l]
+                        full_term_list[k],
+                        full_term_list[l],
                     )
                     if com_kl != 0.0:
                         com_jkl = get_commutator_pauli_tensors(
-                            full_term_list[j], com_kl
+                            full_term_list[j],
+                            com_kl,
                         )
                         commutator_list.append(1.0 / 6.0 * com_jkl)
                         indices_list.append(
@@ -273,14 +369,16 @@ class VariationalUnitary:
                                 theta_index_list[j],
                                 theta_index_list[k],
                                 theta_index_list[l],
-                            )
+                            ),
                         )
                     com_kj = get_commutator_pauli_tensors(
-                        full_term_list[k], full_term_list[j]
+                        full_term_list[k],
+                        full_term_list[j],
                     )
                     if com_kj != 0.0:
                         com_lkj = get_commutator_pauli_tensors(
-                            full_term_list[l], com_kj
+                            full_term_list[l],
+                            com_kj,
                         )
                         commutator_list.append(1.0 / 6.0 * com_lkj)
                         indices_list.append(
@@ -288,7 +386,7 @@ class VariationalUnitary:
                                 theta_index_list[l],
                                 theta_index_list[k],
                                 theta_index_list[j],
-                            )
+                            ),
                         )
 
         # Calculate traces:
