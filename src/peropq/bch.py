@@ -92,9 +92,9 @@ class VariationalNorm:
             for aterm in x_y_3:
                 aterm.coefficient = -0.5 * aterm.coefficient
             self.terms[2] += x_y_3
-            new_term.pretty_print()
-            for aterm in x_y_3:
-                aterm.pretty_print()
+            # new_term.pretty_print()
+            # for aterm in x_y_3:
+            # aterm.pretty_print()
             # Commutators first order:
             x_x_y_3 = self.compute_commutator_sum(
                 [new_term],
@@ -107,10 +107,10 @@ class VariationalNorm:
                 self.terms[0],
                 self.compute_commutator_sum(self.terms[0], [new_term]),
             )
-            for aterm in x_x_y_3:
-                aterm.pretty_print()
-            for aterm in y_y_x_3:
-                aterm.pretty_print()
+            # for aterm in x_x_y_3:
+            # aterm.pretty_print()
+            # for aterm in y_y_x_3:
+            # aterm.pretty_print()
             # breakpoint()
             for i_norm_term, norm_term in enumerate(x_x_y_3):
                 norm_term.coefficient = -(1.0 / 12.0) * norm_term.coefficient
@@ -127,7 +127,7 @@ class VariationalNorm:
             # Do some sanity check
             for norm_term in x_y_2:
                 norm_term.coefficient = -0.5
-                print(norm_term)
+                # print(norm_term)
                 if norm_term.order != 2:
                     message = "second order contained terms of higher order"
                     raise RuntimeError(message)
@@ -186,7 +186,7 @@ class VariationalNorm:
         for order_index in range(self.order):
             for a_term in self.terms[order_index]:
                 self.all_the_terms.append(a_term)
-                a_term.pretty_print()
+                # a_term.pretty_print()
         for i_term, a_term in enumerate(self.all_the_terms):
             for j_term, another_term in enumerate(self.all_the_terms):
                 product_commutators: PauliString = (

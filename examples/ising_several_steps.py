@@ -63,7 +63,7 @@ for site in start_sites:
 
 # Ising model
 h_ising = Hamiltonian(pauli_string_list=term_list)
-time_list = [0.001]
+time_list = [0.1]
 ed = ED(number_of_qubits=n)
 h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
 
@@ -91,7 +91,9 @@ for time in time_list:
     opt = Optimizer()
     # test gradient
     var_norm = VariationalNorm(
-        variational_unitary=variational_unitary, order=2, unconstrained=False
+        variational_unitary=variational_unitary,
+        order=2,
+        unconstrained=False,
     )
     var_norm.get_commutators()
     var_norm.get_traces()
@@ -139,7 +141,9 @@ for time in time_list:
     trotter_unitary = copy.deepcopy(variational_unitary_c)
     opt = Optimizer()
     res = opt.optimize_arbitrary(
-        variational_unitary=variational_unitary_c, order=2, unconstrained=False
+        variational_unitary=variational_unitary_c,
+        order=2,
+        unconstrained=False,
     )  # ,
     # initial_guess=variational_unitary.flatten_theta(variational_unitary_c.theta),
     # )

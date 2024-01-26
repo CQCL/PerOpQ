@@ -73,10 +73,10 @@ class Optimizer:
         if tol == 0:
             variational_norm.get_analytical_gradient()
             optimized_results = scipy.optimize.minimize(
-                variational_norm.calculate_norm,
-                x0,
-                jac=variational_norm.get_numerical_gradient,
-            )
+                variational_norm.calculate_norm, x0
+            )  # ,
+            #     jac=variational_norm.get_numerical_gradient,
+            # )
         else:
             optimized_results = scipy.optimize.minimize(
                 variational_norm.calculate_norm,

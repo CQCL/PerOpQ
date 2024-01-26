@@ -163,7 +163,6 @@ class VariationalUnitary:
         """
         if not self.trace_calculated:
             self.calculate_traces()
-        print("shape ", theta.shape)
         if np.array(theta).shape[0] > self.n_terms:
             theta_new = np.array(theta).reshape(
                 (
@@ -207,7 +206,8 @@ class VariationalUnitary:
                 commutator_list.append(
                     0.5
                     * get_commutator_pauli_tensors(
-                        full_term_list[i], full_term_list[j]
+                        full_term_list[i],
+                        full_term_list[j],
                     ),
                 )
         trace_sum = 0
@@ -219,8 +219,6 @@ class VariationalUnitary:
                 if product_commutator != 0.0:
                     trace_list.append(normalized_trace())
                     trace_sum += product_commutator.normalized_trace()
-        print(trace_list)
-        breakpoint()
         return -trace_sum
 
     def c2_square_gradient_test(self, theta: npt.ArrayLike = ()) -> npt.ArrayLike:
@@ -242,7 +240,8 @@ class VariationalUnitary:
                 commutator_list.append(
                     0.5
                     * get_commutator_pauli_tensors(
-                        full_term_list[i], full_term_list[j]
+                        full_term_list[i],
+                        full_term_list[j],
                     ),
                 )
                 indices_list.append((i, j))
@@ -258,17 +257,6 @@ class VariationalUnitary:
                     )
                     product_commutator = commutator_i * commutator_j
                     theta_coeff = 0.0
-                    print("i_derivative ", i_derivative)
-                    print(tuple_list[indices_list[i][0]])
-                    print(tuple_list[indices_list[i][1]])
-                    print(tuple_list[indices_list[j][0]])
-                    print(tuple_list[indices_list[j][1]])
-                    try:
-                        print("product_commutator.normalized_trace()")
-                        print(product_commutator.normalized_trace())
-                        # breakpoint()
-                    except:
-                        pass
                     if i_derivative == indices_list[i][0]:
                         coeff = (
                             full_theta_coeff
@@ -327,7 +315,8 @@ class VariationalUnitary:
                 commutator_list.append(
                     0.5
                     * get_commutator_pauli_tensors(
-                        full_term_list[i], full_term_list[j]
+                        full_term_list[i],
+                        full_term_list[j],
                     ),
                 )
                 indices_list.append((theta_index_list[i], theta_index_list[j]))
@@ -392,8 +381,6 @@ class VariationalUnitary:
         # Calculate traces:
         trace_sum = 0.0
         for i, commutator_i in enumerate(commutator_list):
-            if commutator_i != 0.0:
-                print(commutator_i, "theta ", indices_list[i], "  com  ")
             for commutator_j in commutator_list:
                 product_commutator: PauliString = commutator_i * commutator_j
                 # print("product commutator ",product_commutator)
