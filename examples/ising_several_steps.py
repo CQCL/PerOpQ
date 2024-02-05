@@ -23,8 +23,8 @@ z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
 bc_modifier = 1
-nx = 3
-ny = 3
+nx = 2
+ny = 2
 n = nx * ny
 for i in range(n):
     zi = PauliString.from_pauli_sequence(paulis=[Pauli.Z], start_qubit=i)
@@ -34,8 +34,8 @@ for i in range(n):
     yi = PauliString.from_pauli_sequence(paulis=[Pauli.Y], start_qubit=i)
     y_list.append(yi)
 term_list = []
-# for i in range(n):
-#     term_list.append(1.0 * z_list[i])
+for i in range(n):
+    term_list.append(1.0 * z_list[i])
 for i in range(n):
     term_list.append(1.0 * x_list[i])
 V = -1
@@ -63,7 +63,7 @@ for site in start_sites:
 
 # Ising model
 h_ising = Hamiltonian(pauli_string_list=term_list)
-time_list = [0.1]
+time_list = [0.05,0.1,0.15,0.2,0.25,0.3]
 ed = ED(number_of_qubits=n)
 h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
 
@@ -84,66 +84,73 @@ energy = state_init.T @ h_ising_matrix @ state_init
 # print("unconstrained ")
 # print("-------")
 nlayer = 3
-for time in time_list:
-    variational_unitary = VU(h_ising, number_of_layer=nlayer, time=time)
-    variational_unitary.set_theta_to_trotter()
-    # trotter_unitary = copy.deepcopy(variational_unitary)
+variational_unitary = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
+variational_unitary.set_theta_to_trotter()
+for itime,time in enumerate(time_list):
+    variational_unitary.time=time
+    trotter_unitary = copy.deepcopy(variational_unitary)
     opt = Optimizer()
+    trotter_unitary.set_theta_to_trotter()
     # test gradient
-    var_norm = VariationalNorm(
-        variational_unitary=variational_unitary,
-        order=2,
-        unconstrained=False,
-    )
-    var_norm.get_commutators()
-    var_norm.get_traces()
-    norm_var = var_norm.calculate_norm(var_norm.variational_unitary.theta)
-    var_norm.get_analytical_gradient()
+    # var_norm = VariationalNorm(
+    #     variational_unitary=variational_unitary,
+    #     order=2,
+    #     unconstrained=True,
+    # )
+    # var_norm.get_commutators()
+    # var_norm.get_traces()
+    # norm_var = var_norm.calculate_norm(var_norm.variational_unitary.theta)
+    # var_norm.get_analytical_gradient()
+    # theta_flat = variational_unitary.flatten_theta(variational_unitary.theta)
+    # grad = var_norm.get_numerical_gradient(theta_flat)
+    # # approximate gradient
+    # c2_theta = var_norm.calculate_norm(
+    #     variational_unitary.theta,
+    # )
+    # dt_grad = 0.0001
+    # index_gradient = 0
+    # theta_dt = copy.deepcopy(variational_unitary.theta)
+    # theta_dt[0, index_gradient] = theta_dt[0, index_gradient] + dt_grad
+    # variational_unitary.update_theta(theta_dt)
+    # c2_theta_dt = var_norm.calculate_norm(variational_unitary.theta)
+    # appr = (c2_theta_dt - c2_theta) / dt_grad
+    # # analytical gradient
+    # analytical = variational_unitary.c2_square_gradient_test(variational_unitary.theta)
+    # print("c2_theta ", c2_theta)
+    # print("c2_theta_dt", c2_theta_dt)
+    # print("var_norm ", norm_var)
+    # print("grad ", grad)
+    # print("analytical ", analytical)
+    # # print("appr ",grad[13]/appr)
+    # print("appr ", appr)
+    # ###############
     theta_flat = variational_unitary.flatten_theta(variational_unitary.theta)
-    grad = var_norm.get_numerical_gradient(theta_flat)
-    # approximate gradient
-    c2_theta = var_norm.calculate_norm(
-        variational_unitary.theta,
-    )
-    dt_grad = 0.0001
-    index_gradient = 6
-    theta_dt = copy.deepcopy(variational_unitary.theta)
-    theta_dt[0, index_gradient] = theta_dt[0, index_gradient] + dt_grad
-    variational_unitary.update_theta(theta_dt)
-    c2_theta_dt = var_norm.calculate_norm(variational_unitary.theta)
-    appr = (c2_theta_dt - c2_theta) / dt_grad
-    # analytical gradient
-    analytical = variational_unitary.c2_square_gradient_test(variational_unitary.theta)
-    print("c2_theta ", c2_theta)
-    print("c2_theta_dt", c2_theta_dt)
-    print("var_norm ", norm_var)
-    print("grad ", grad)
-    print("analytical ", analytical)
-    # print("appr ",grad[13]/appr)
-    print("appr ", appr)
-    ###############
     res = opt.optimize_arbitrary(
         variational_unitary=variational_unitary,
         order=2,
-        unconstrained=False,
+        unconstrained=True,
+        initial_guess=theta_flat,
     )
     print("res ", res)
-    c2 = variational_unitary.c2_squared(variational_unitary.theta)
-    print("c2 ", c2)
-    c2_trotter = variational_unitary.c2_squared(
-        variational_unitary.get_initial_trotter_vector(),
-    )
+    # c2 = variational_unitary.c2_squared(variational_unitary.theta)
+    # print("c2 ", c2)
+    # c2_trotter = variational_unitary.c2_squared(
+    #     variational_unitary.get_initial_trotter_vector(),
+    # )
 # print("------")
 # print("constrained")
+variational_unitary_c = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
+variational_unitary_c.set_theta_to_trotter()
 for time in time_list:
-    variational_unitary_c = VU(h_ising, number_of_layer=nlayer, time=time)
-    variational_unitary_c.set_theta_to_trotter()
-    trotter_unitary = copy.deepcopy(variational_unitary_c)
+    variational_unitary_c.time = time
     opt = Optimizer()
+    theta_flat = variational_unitary_c.flatten_theta(variational_unitary_c.theta)
     res = opt.optimize_arbitrary(
         variational_unitary=variational_unitary_c,
-        order=2,
-        unconstrained=False,
+        order=3,
+        unconstrained=True,
+        tol=1e-10,
+        initial_guess=theta_flat
     )  # ,
     # initial_guess=variational_unitary.flatten_theta(variational_unitary_c.theta),
     # )
@@ -233,6 +240,7 @@ plt.plot(z_array_variational_c[:, int(n / 2)], label="variational constrained")
 plt.xlabel("time step")
 plt.ylabel(r"$\langle Z \rangle$")
 plt.legend(loc="best")
+# Plot the error on the energy
 plt.figure()
 plt.plot(
     np.abs(z_array_continuous[:, int(n / 2)] - z_array_trotter[:, int(n / 2)]),
@@ -251,7 +259,7 @@ plt.plot(
 plt.xlabel("time step")
 plt.ylabel("error")
 plt.legend(loc="best")
-plt.show()
+plt.savefig('err_Z_titled_3x3_increasing_dt_to_0.3.pdf')
 plt.figure()
 plt.plot(np.abs(np.array(energy_trotter) - energy), label="trotter")
 plt.plot(np.abs(np.array(energy_variational) - energy), label="variational")
@@ -262,4 +270,5 @@ plt.plot(
 plt.xlabel("time step")
 plt.ylabel("energy error")
 plt.legend(loc="best")
+plt.savefig('err_E_titled_3x3_increasing_dt_to_0.3.pdf')
 plt.show()

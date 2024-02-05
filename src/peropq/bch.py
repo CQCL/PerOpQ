@@ -285,9 +285,8 @@ class VariationalNorm:
                     if (
                         (left_term.order > min_order)
                         and (right_term.order > min_order)
-                        and ((None, None) not in left_term.theta_indices)
-                        and ((None, None) not in right_term.theta_indices)
                     ):
+                        #TODO: just try to remove the None indices in this list and that should fix it
                         indices_list_list = get_i_derivative(
                             left_term.theta_indices + right_term.theta_indices,
                             (depth_index, term_index),
@@ -317,6 +316,7 @@ class VariationalNorm:
                 ):  # sum of terms of the derivative
                     product_theta = self.gradient_vector_constants[i][k]
                     for index_tuple in derivative_indices:
-                        product_theta *= self.variational_unitary.theta[index_tuple]
+                        if index_tuple!=(None,None):
+                            product_theta *= self.variational_unitary.theta[index_tuple]
                     gradient[i] += product_theta
         return -gradient

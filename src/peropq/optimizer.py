@@ -64,24 +64,20 @@ class Optimizer:
             unconstrained=unconstrained,
         )
         variational_norm.get_commutators()
-        try:
-            for aterm in variational_norm.terms[2]:
-                aterm.pretty_print()
-        except:
-            pass
         variational_norm.get_traces()
+        variational_norm.get_analytical_gradient()
         if tol == 0:
             variational_norm.get_analytical_gradient()
             optimized_results = scipy.optimize.minimize(
-                variational_norm.calculate_norm, x0
-            )  # ,
-            #     jac=variational_norm.get_numerical_gradient,
-            # )
+                variational_norm.calculate_norm, x0,
+                jac=variational_norm.get_numerical_gradient,
+            )
         else:
             optimized_results = scipy.optimize.minimize(
                 variational_norm.calculate_norm,
                 x0,
                 tol=tol,
+                jac=variational_norm.get_numerical_gradient,
             )
         return optimized_results
 
