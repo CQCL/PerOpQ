@@ -4,8 +4,10 @@ import numpy as np
 import numpy.typing as npt
 import scipy  # type: ignore[import-untyped]
 
+from peropq.ansatz_bch import AnsatzVariationalNorm
 from peropq.bch import VariationalNorm
 from peropq.hamiltonian import Hamiltonian
+from peropq.unconstrained_variational_unitary import UnconstrainedVariationalUnitary
 from peropq.variational_unitary import VariationalUnitary
 
 
@@ -69,7 +71,8 @@ class Optimizer:
         if tol == 0:
             variational_norm.get_analytical_gradient()
             optimized_results = scipy.optimize.minimize(
-                variational_norm.calculate_norm, x0,
+                variational_norm.calculate_norm,
+                x0,
                 jac=variational_norm.get_numerical_gradient,
             )
         else:
@@ -113,3 +116,36 @@ class Optimizer:
             )
             evolve_to_time += dt_optimize
         return optimized_results, variational_unitary
+
+    def optimize_ansatz(
+        self,
+        variational_unitary: UnconstrainedVariationalUnitary,
+        order: float,
+        initial_guess: Sequence[float],
+        hamiltonian: Hamiltonian,
+        tol: float = 0,
+    ) -> scipy.optimize.OptimizeResult:
+        if len(initial_guess) != 0:
+            x0: npt.NDArray = np.array(initial_guess)
+        else:
+            x0 = variational_unitary.get_initial_trotter_vector()
+            x0 = variational_unitary.flatten_theta(x0)
+        variational_norm = AnsatzVariationalNorm(
+            variational_unitary,
+            order=order,
+            hamiltonian=hamiltonian,
+        )
+        variational_norm.get_commutators()
+        variational_norm.get_traces()
+        if tol == 0:
+            optimized_results = scipy.optimize.minimize(
+                variational_norm.calculate_norm,
+                x0,
+            )
+        else:
+            optimized_results = scipy.optimize.minimize(
+                variational_norm.calculate_norm,
+                x0,
+                tol=tol,
+            )
+        return optimized_results
