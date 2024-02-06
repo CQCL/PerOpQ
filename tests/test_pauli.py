@@ -21,12 +21,12 @@ def test_pauli_mult() -> None:
     assert Pauli.Y * Pauli.I == (1, Pauli.Y)
     assert Pauli.I * Pauli.Z == (1, Pauli.Z)
     assert Pauli.Z * Pauli.I == (1, Pauli.Z)
-    assert Pauli.X * Pauli.Y == (complex(0, 1), Pauli.Z)
-    assert Pauli.Y * Pauli.X == (complex(0, -1), Pauli.Z)
-    assert Pauli.Y * Pauli.Z == (complex(0, 1), Pauli.X)
-    assert Pauli.Z * Pauli.Y == (complex(0, -1), Pauli.X)
-    assert Pauli.Z * Pauli.X == (complex(0, 1), Pauli.Y)
-    assert Pauli.X * Pauli.Z == (complex(0, -1), Pauli.Y)
+    assert (complex(0, 1), Pauli.Z) == Pauli.X * Pauli.Y
+    assert (complex(0, -1), Pauli.Z) == Pauli.Y * Pauli.X
+    assert (complex(0, 1), Pauli.X) == Pauli.Y * Pauli.Z
+    assert (complex(0, -1), Pauli.X) == Pauli.Z * Pauli.Y
+    assert (complex(0, 1), Pauli.Y) == Pauli.Z * Pauli.X
+    assert (complex(0, -1), Pauli.Y) == Pauli.X * Pauli.Z
 
 
 def test_paulis_commute() -> None:
