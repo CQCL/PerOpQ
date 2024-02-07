@@ -16,6 +16,7 @@ documentation = "https://peropq.readthedocs.io"
 python = ">=3.10,<4.0"
 numpy = "~1.26"
 scipy = "^1.11.3"
+sphinx-autoapi = "^3.0.0"
 
 [tool.poetry.group.tests]
 optional = true
@@ -67,13 +68,13 @@ show_missing = true
 
 [tool.ruff]
 # Enable Pyflakes `E` and `F` codes by default.
-select = ["F", "E", "W", "C90", "I", "N", "D", "UP", "YTT", "ANN",
+lint.select = ["F", "E", "W", "C90", "I", "N", "D", "UP", "YTT", "ANN",
     "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM",
     "EXE", "ISC", "ICN", "G", "INP", "PIE", "T20", "PT", "Q", "RET",
     "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PD", "PGH", "PL",
     "TRY", "RSE", "SLF", "RUF"]
-ignore = ["E501", "D211", "D212", "TCH001", "TCH002", "ANN101", "ANN102", "D100", "E741"]
-unfixable = ["T201"]
+lint.ignore = ["E501", "D211", "D212", "TCH001", "TCH002", "ANN101", "ANN102", "D100", "E741"]
+lint.unfixable = ["T201"]
 # Assume Python 3.11.
 target-version = "py310"
 
@@ -81,7 +82,7 @@ target-version = "py310"
 "__init__.py" = ["E402", "F403", "D104"]
 "tests/*" = ["S101", "D103", "FBT001", "PLR2004", "PT011"]
 "noxfile.py" = ["S101"]
-"docs/conf.py" = ["A001", "INP001"]
+"docs/conf.py" = ["A001", "INP001", "PTH100"]
 "examples/*" = ["INP001"]
 
 [tool.ruff.mccabe]
