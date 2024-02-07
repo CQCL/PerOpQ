@@ -81,7 +81,7 @@ target-version = "py310"
 "__init__.py" = ["E402", "F403", "D104"]
 "tests/*" = ["S101", "D103", "FBT001", "PLR2004", "PT011"]
 "noxfile.py" = ["S101"]
-"docs/conf.py" = ["A001", "INP001"]
+"docs/conf.py" = ["A001", "INP001", "PTH100"]
 "examples/*" = ["INP001"]
 
 [tool.ruff.mccabe]
