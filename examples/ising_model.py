@@ -101,7 +101,7 @@ def get_square_ising_model(
 final_time = 0.3
 n_x = 3
 n = n_x * n_x
-h_ising = get_square_ising_model(coupling=1.0, h_x=1.0, h_z=0.0, n_x=n_x)
+h_ising = get_square_ising_model(coupling=1.0, h_x=1.0, h_z=1.0, n_x=n_x)
 ed = ExactDiagonalization(number_of_qubits=n_x * n_x)
 h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
 
@@ -110,13 +110,17 @@ x_list, y_list, z_list = get_pauli_string_lists(n)
 z_list_sparse = []
 for site in range(n - 1):
     z_list_sparse.append(ed.get_sparse(z_list[site]))
+    # z_list_sparse.append(ed.get_sparse(z_list[site]*z_list[site+1]))
 z_t_continous = []
 z_t_trotter = []
 z_t_variational = []
 energy_trotter = []
 energy_variational = []
 # Get the observable for the continuous time evolution
-state_init = np.array([1.0 + 0.0j] + [0.0] * (2**n - 1))
+np.random.seed(1)
+state_init = np.array([0.0 + 0.0j] + [0.0] * (2**n - 1))
+random_integer = np.random.randint(low=0,high=2**n)
+state_init[random_integer]=1.0
 energy = state_init.T @ h_ising_matrix @ state_init
 nlayer = 3
 
@@ -144,7 +148,7 @@ variational_error = ed.get_error(
 )
 rich.print("trotter error", trotter_error)
 rich.print("variational error order 2", variational_error)
-for _ in range(20):
+for _ in range(10):
     state_trotter = ed.apply_variational_to_state(trotter_unitary, state_trotter)
     state_continuous = ed.apply_continuous_to_state(
         hamiltonian=h_ising,
@@ -171,6 +175,7 @@ for _ in range(20):
     energy_variational.append(
         state_variational.T.conj() @ h_ising_matrix @ state_variational,
     )
+    print("energy ",state_continuous.T.conj()@h_ising_matrix@state_continuous)
 
 z_array_continuous = np.array(z_t_continous)
 z_array_trotter = np.array(z_t_trotter)
@@ -190,7 +195,7 @@ plt.plot(
     label="variational",
 )
 plt.xlabel("time step")
-plt.ylabel("error " + "r$Z_{N/2}$")
+plt.ylabel("error " + r"$Z_{L/2}$")
 plt.legend(loc="best")
 plt.savefig("correlation_error.pdf")
 plt.figure()
