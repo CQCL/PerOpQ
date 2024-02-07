@@ -2,7 +2,7 @@
 
 [![Read the Docs](https://readthedocs.org/projects/peropq/badge/)](https://peropq.readthedocs.io/)
 
-PerOpQ is an implementation of Perturbative Optimization for Hamiltonian Simulation, based on the ideas presented in arXiv:2306.07208.
+PerOpQ is an implementation of Perturbative Optimization for Hamiltonian Simulation, based on the ideas presented in [arXiv:2306.07208](https://arxiv.org/abs/2306.07208).
 The goal of the library is to provide optimized circuits to perform Hamiltonian simulations with less error than with naive Trotter decompositions.
 The basic idea is to evaluate the error of an ansatz unitary (decomposed into a set of one-qubit and two-qubit gates) by applying recursively
 the Baker–Campbell–Hausdorff (BCH) formula and truncating the resulting series at a given order.
