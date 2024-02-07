@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "PerOpQ"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Travis Thompson <travis.thompson@quantinuum.com>", "Kevin Hemery <kevin.hemery@quantinuum.com>"]
 readme = "README.md"
