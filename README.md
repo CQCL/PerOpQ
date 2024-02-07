@@ -8,7 +8,6 @@ The basic idea is to evaluate the error of an ansatz unitary (decomposed into a 
 the Baker–Campbell–Hausdorff (BCH) formula and truncating the resulting series at a given order.
 PerOpQ takes a model defined by a list of Pauli strings, a final time and a circuit depth as inputs and returns an optimized circuit as a result.
 
-
 ## Development
 
 This project uses [Poetry](https://python-poetry.org/) for packaging and dependency management and
