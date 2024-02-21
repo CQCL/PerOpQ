@@ -79,39 +79,51 @@ class VariationalNorm:
         return result_list
 
     def add_term(self, new_term: NormTerm):  # TODO: take care of coefficient
+        # Fourth order
+        if self.order>=4:        
+            #2nd order with terms of order 3
+            x_y_4 = self.compute_commutator_sum([new_term], self.terms[2])
+            for aterm in x_y_4:
+                aterm.coefficient = -0.5 * aterm.coefficient
+            self.terms[3] += x_y_4
+            # 3rd order with terms of order 2
+            x_x_y_4 = self.compute_commutator_sum(
+                [new_term],
+                self.compute_commutator_sum([new_term], self.terms[1]),
+            )
+            y_y_x_4 = []
+            y_y_x_4 += self.compute_commutator_sum(
+                self.terms[1],
+                self.compute_commutator_sum(self.terms[1], [new_term]),
+            )
+            for i_norm_term, norm_term in enumerate(x_x_y_4):
+                norm_term.coefficient = -(1.0 / 12.0) * norm_term.coefficient
+            for i_norm_term, norm_term in enumerate(y_y_x_4):
+                norm_term.coefficient = -(1.0 / 12.0) * norm_term.coefficient
+            self.terms[3] += x_x_y_4
+            self.terms[3] += y_y_x_4
+            #4th order with terms of order 1
+            y_x_x_y_4 = self.compute_commutator_sum([new_term],self.compute_commutator_sum(self.terms[0],self.compute_commutator_sum(self.terms[0],[new_term])))
+            for i_norm_term,norm_term in enumerate(y_x_x_y_4):
+                norm_term.coefficient = (-1.0/24.0)*norm_term.coefficient
+            self.terms[3] +=y_x_x_y_4
         # Third order
         if self.order >= 3:
-            # print("existing terms ")
-            # for aterm in self.terms[0]:
-            #     aterm.pretty_print()
-            # for aterm in self.terms[1]:
-            #     aterm.pretty_print()
             ######################
             # Commutators with terms of order 2:
             x_y_3 = self.compute_commutator_sum([new_term], self.terms[1])
             for aterm in x_y_3:
                 aterm.coefficient = -0.5 * aterm.coefficient
             self.terms[2] += x_y_3
-            # new_term.pretty_print()
-            # for aterm in x_y_3:
-            # aterm.pretty_print()
-            # Commutators first order:
             x_x_y_3 = self.compute_commutator_sum(
                 [new_term],
                 self.compute_commutator_sum([new_term], self.terms[0]),
             )
             y_y_x_3 = []
-            # for aterm_0 in self.terms[0]:
-            #     y_y_x_3 += self.compute_commutator_sum([aterm_0],self.compute_commutator_sum([aterm_0],[new_term]))
             y_y_x_3 += self.compute_commutator_sum(
                 self.terms[0],
                 self.compute_commutator_sum(self.terms[0], [new_term]),
             )
-            # for aterm in x_x_y_3:
-            # aterm.pretty_print()
-            # for aterm in y_y_x_3:
-            # aterm.pretty_print()
-            # breakpoint()
             for i_norm_term, norm_term in enumerate(x_x_y_3):
                 norm_term.coefficient = -(1.0 / 12.0) * norm_term.coefficient
             for i_norm_term, norm_term in enumerate(y_y_x_3):
@@ -127,7 +139,6 @@ class VariationalNorm:
             # Do some sanity check
             for norm_term in x_y_2:
                 norm_term.coefficient = -0.5
-                # print(norm_term)
                 if norm_term.order != 2:
                     message = "second order contained terms of higher order"
                     raise RuntimeError(message)

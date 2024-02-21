@@ -217,7 +217,6 @@ class VariationalUnitary:
                 product_commutator: PauliString = commutator_i * commutator_j
                 # print("product commutator ",product_commutator)
                 if product_commutator != 0.0:
-                    trace_list.append(normalized_trace())
                     trace_sum += product_commutator.normalized_trace()
         return -trace_sum
 

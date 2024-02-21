@@ -9,6 +9,7 @@ from peropq.bch import VariationalNorm
 from peropq.hamiltonian import Hamiltonian
 from peropq.unconstrained_variational_unitary import UnconstrainedVariationalUnitary
 from peropq.variational_unitary import VariationalUnitary
+from peropq.exact_norm import ExactUnitary
 
 
 class Optimizer:
@@ -83,6 +84,21 @@ class Optimizer:
                 jac=variational_norm.get_numerical_gradient,
             )
         return optimized_results
+
+    def optimize_exact(
+        self,
+        exact_unitary: ExactUnitary,
+        initial_guess: Sequence[float] = [],
+        tol: float = 0,
+    ):
+        if len(initial_guess) != 0:
+            x0: npt.NDArray = np.array(initial_guess)
+        else:
+            x0 = variational_unitary.get_initial_trotter_vector()
+            x0 = variational_unitary.flatten_theta(x0)
+        
+        return scipy.optimize.minimize(exact_unitary.get_exact_norm, x0)
+        
 
     def optimize_steps(
         self,

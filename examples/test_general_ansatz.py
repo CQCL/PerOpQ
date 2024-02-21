@@ -19,7 +19,7 @@ def expectation_value(state, obs_list):
         expectation_value_list.append(state.T.conj() @ obs @ state)
     return expectation_value_list
 
-
+np.random.seed(0)
 z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
@@ -27,6 +27,7 @@ bc_modifier = 1
 nx = 3
 ny = 3
 n = nx * ny
+list_random_couplings = []
 for i in range(n):
     zi = PauliString.from_pauli_sequence(paulis=[Pauli.Z], start_qubit=i)
     z_list.append(zi)
@@ -47,8 +48,9 @@ for col in range(nx):
         v_list.append(site)
     print("vertical bonds")
     for isite in range(len(v_list) - bc_modifier):
+        list_random_couplings.append(np.random.rand())
         term_list.append(
-            z_list[v_list[isite]] * z_list[v_list[(isite + 1) % len(v_list)]],
+            list_random_couplings[-1] * z_list[v_list[isite]] * z_list[v_list[(isite + 1) % len(v_list)]],
         )
         print(v_list[isite], v_list[(isite + 1) % len(v_list)])
 
@@ -59,16 +61,19 @@ for site in range(0, n + 1 - nx, nx):
 print("horizontal bonds")
 for site in start_sites:
     for col in range(nx - bc_modifier):
-        term_list.append(z_list[site + col] * z_list[site + (col + 1) % (nx)])
+        list_random_couplings.append(np.random.rand())
+        term_list.append(list_random_couplings[-1] * z_list[site + col] * z_list[site + (col + 1) % (nx)])
         print((site + col), site + (col + 1) % (nx))
 
 #Define a new generalized ansatz
 #############################
 # vertical bonds
-time_list = [0.3]
-nlayer = 3
+# time_list = [0.05,0.1,0.15,0.2]
+time_list = [0.1]
+nlayer = 1
 ansatz_term_list = []
 theta_init = []
+counter = 0
 for col in range(nx):
     v_list = []
     for site in range(col, n + 1 - nx + col, nx):
@@ -94,15 +99,16 @@ for col in range(nx):
         ansatz_term_list.append(
             x_list[v_list[isite]],
         )
-        theta_init.append(0.5*time_list[0]/nlayer)
+        theta_init.append(1.0*time_list[0]/nlayer)
         ansatz_term_list.append(
            x_list[v_list[(isite + 1)]],
         )
-        theta_init.append(0.5*time_list[0]/nlayer)
+        theta_init.append(1.0*time_list[0]/nlayer)
         ansatz_term_list.append(
             z_list[v_list[isite]] * z_list[v_list[(isite + 1) % len(v_list)]],
         )
-        theta_init.append(1.0*time_list[0]/nlayer)
+        theta_init.append(list_random_couplings[counter]*time_list[0]/nlayer)
+        counter+=1
         print(v_list[isite], v_list[(isite + 1) % len(v_list)])
 # horizontal bonds
 start_sites = []
@@ -136,7 +142,8 @@ for site in start_sites:
         )
         theta_init.append(0.5*time_list[0]/nlayer)
         ansatz_term_list.append(z_list[site + col] * z_list[site + (col + 1) % (nx)])
-        theta_init.append(1.0*time_list[0]/nlayer)
+        theta_init.append(list_random_couplings[counter]*time_list[0]/nlayer)
+        counter+=1
 ###########################
 
 # Ising model
@@ -149,8 +156,8 @@ h_ansatz = Hamiltonian(pauli_string_list=ansatz_term_list)
 
 # Get list of single Z string
 z_list_sparse = []
-for site in range(n):
-    z_list_sparse.append(ed.get_sparse(z_list[site]))
+for site in range(n-1):
+    z_list_sparse.append(ed.get_sparse(z_list[site]*z_list[site+1]))
 z_t_continous = []
 z_t_trotter = []
 z_t_variational = []
@@ -159,24 +166,31 @@ energy_trotter = []
 energy_variational = []
 energy_variational_c = []
 # Get the observable for the continuous time evolution
-state_init = np.array([1.0 + 0.0j] + [0.0] * (2**n - 1))
+state_init = np.array([0.0 + 0.0j] + [0.0] * (2**n - 1))
+np.random.seed(0)
+random_int = np.random.randint(low=0,high=2**n)
+state_init[random_int] = 1.0
 energy = state_init.T @ h_ising_matrix @ state_init
 # print("unconstrained ")
 # print("-------")
 theta_init0 = copy.deepcopy(theta_init)
 for n_init in range(1,nlayer):
     theta_init =theta_init + theta_init0
-variational_unitary = VU(h_ansatz, number_of_layer=nlayer, time=time_list[0])
-# variational_unitary.set_theta_to_trotter()
+variational_unitary = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
+# Comment following lines for the general ansatz
+variational_unitary.set_theta_to_trotter()
+theta_init = variational_unitary.flatten_theta(variational_unitary.theta)
 for itime,time in enumerate(time_list):
     variational_unitary.time=time
     opt = Optimizer()
     res = opt.optimize_ansatz(
         variational_unitary=variational_unitary,
-        order=2,
+        order=3,
         initial_guess=theta_init,
         hamiltonian=h_ising,
+        tol=1e-10
     )
+    theta_init = variational_unitary.flatten_theta(variational_unitary.theta)
     print("res ", res)
 variational_unitary_c = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
 variational_unitary_c.set_theta_to_trotter()
@@ -189,7 +203,7 @@ for time in time_list:
         variational_unitary=variational_unitary_c,
         order=2,
         unconstrained=True,
-        # tol=1e-10,
+        tol=1e-10
     )  # ,
     # initial_guess=variational_unitary.flatten_theta(variational_unitary_c.theta),
     # )
@@ -198,6 +212,13 @@ for time in time_list:
     # print("c2 ",c2)
     # c2_trotter = variational_unitary.c2_squared(variational_unitary.get_initial_trotter_vector())
 # breakpoint()
+
+# Get the Trotter unitary
+
+variational_unitary_trotter = VU(h_ising, number_of_layer=nlayer, time=time_list[-1])
+variational_unitary_trotter.set_theta_to_trotter()
+trotter_unitary = copy.deepcopy(variational_unitary_trotter)
+#
 
 state_variational = copy.deepcopy(state_init)
 state_variational_c = copy.deepcopy(state_init)
@@ -214,8 +235,8 @@ variational_c_error = ed.get_error(
     hamiltonian=h_ising,
 )
 print("trotter error", trotter_error)
-print("variational error order 2", variational_error)
-print("variational error order 3", variational_c_error)
+print("variational error order 3", variational_error)
+print("variational error order 2", variational_c_error)
 
 for istep in range(10):
     state_trotter = ed.apply_variational_to_state(trotter_unitary, state_trotter)
@@ -265,49 +286,50 @@ energy_trotter = np.array(energy_trotter)
 energy_variational = np.array(energy_variational)
 energy_variational_c = np.array(energy_variational_c)
 
-plt.figure()
-plt.plot(z_array_continuous[:, 0], label="continuous")
-plt.plot(z_array_trotter[:, 0], label="trotter")
-plt.plot(z_array_variational[:, 0], label="variational")
-plt.plot(z_array_variational_c[:, 0], label="variational constrained")
-plt.legend(loc="best")
+# plt.figure()
+# plt.plot(z_array_continuous[:, 0], label="continuous")
+# plt.plot(z_array_trotter[:, 0], label="trotter")
+# plt.plot(z_array_variational[:, 0], label="general ansatz")
+# plt.plot(z_array_variational_c[:, 0], label="trotter ansatz")
+# plt.legend(loc="best")
 plt.figure()
 plt.plot(z_array_continuous[:, int(n / 2)], label="continuous")
 plt.plot(z_array_trotter[:, int(n / 2)], label="trotter")
-plt.plot(z_array_variational[:, int(n / 2)], label="variational")
-plt.plot(z_array_variational_c[:, int(n / 2)], label="variational constrained")
+plt.plot(z_array_variational[:, int(n / 2)], label="general ansatz")
+plt.plot(z_array_variational_c[:, int(n / 2)], label="trotter ansatz")
 plt.xlabel("time step")
 plt.ylabel(r"$\langle Z \rangle$")
 plt.legend(loc="best")
+plt.savefig('Z_titled_Ising_dt03_ansatz.pdf')
 # Plot the error on the energy
 plt.figure()
 plt.plot(
     np.abs(z_array_continuous[:, int(n / 2)] - z_array_trotter[:, int(n / 2)]),
     linestyle="--",
     marker="o",
-    label="err trotter",
+    label="trotter",
 )
 plt.plot(
     np.abs(z_array_continuous[:, int(n / 2)] - z_array_variational[:, int(n / 2)]),
-    label="variational",
+    label="general ansatz",
 )
 plt.plot(
     np.abs(z_array_continuous[:, int(n / 2)] - z_array_variational_c[:, int(n / 2)]),
-    label="variational constrained",
+    label="trotter ansatz",
 )
 plt.xlabel("time step")
 plt.ylabel("error")
 plt.legend(loc="best")
-plt.savefig('err_Z_titled_3x3_increasing_dt_to_0.3.pdf')
+plt.savefig('err_Z_titled_Ising_dt03_ansatz.pdf')
 plt.figure()
 plt.plot(np.abs(np.array(energy_trotter) - energy), label="trotter")
-plt.plot(np.abs(np.array(energy_variational) - energy), label="variational")
+plt.plot(np.abs(np.array(energy_variational) - energy), label="general ansatz")
 plt.plot(
     np.abs(np.array(energy_variational_c) - energy),
-    label="variational constrained",
+    label="variational trotter",
 )
 plt.xlabel("time step")
 plt.ylabel("energy error")
 plt.legend(loc="best")
-plt.savefig('err_E_titled_3x3_increasing_dt_to_0.3.pdf')
+plt.savefig('err_E__titled_Ising_dt03_ansatz.pdf')
 plt.show()

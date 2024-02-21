@@ -30,10 +30,10 @@ for i in range(n):
     yi = PauliString.from_pauli_sequence(paulis=[Pauli.Y], start_qubit=i)
     y_list.append(yi)
 term_list = []
-# for i in range(n):
-#     term_list.append(1.0 * z_list[i])
 for i in range(n):
-    term_list.append(1.0 * x_list[i])
+    term_list.append(0.3 * z_list[i])
+for i in range(n):
+    term_list.append(0.3 * x_list[i])
 V = -1
 # vertical bonds
 for col in range(nx):
@@ -59,7 +59,7 @@ for site in start_sites:
 
 # Ising model
 h_ising = Hamiltonian(pauli_string_list=term_list)
-time_list = [1.0]
+time_list = [0.4]
 ed = ED(number_of_qubits=n)
 h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
 
@@ -90,6 +90,7 @@ for time in time_list:
     # print(c2)
     print("third order")
     c3test = variational_unitary.c3_squared_test(variational_unitary.theta)
+    c2test = variational_unitary.c2_squared_test(variational_unitary.theta)
     variational_norm = VariationalNorm(
         variational_unitary=variational_unitary, order=3, unconstrained=True
     )
@@ -98,6 +99,7 @@ for time in time_list:
     c3 = variational_norm.calculate_norm(variational_unitary.theta)
     print("c3 ", c3)
     print("c3_test ", c3test)
+    print("c2_test",c2test)
     import sys
 
     sys.exit()

@@ -65,8 +65,9 @@ for site in start_sites:
 
 # Ising model
 h_ising = Hamiltonian(pauli_string_list=term_list)
-time_list=[0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.3,1.6,1.9]
+# time_list=[0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.3,1.6,1.9]
 # time_list = [0.001,0.005,0.01,0.02,0.03,0.04,0.05]
+time_list = [0.3]
 ed =  ED(number_of_qubits=n)
 h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
 if norm_mode:

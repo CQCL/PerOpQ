@@ -52,10 +52,10 @@ class ExactDiagonalization:
 
     def get_hamiltonian_matrix(self, hamiltonian: Hamiltonian):
         """param: hamiltonian to be converted to sparse."""
-        hamiltonian_matrix = self.get_sparse(hamiltonian.pauli_string_list[0])
+        hamiltonian_matrix = self.get_sparse(hamiltonian.cjs[0]*hamiltonian.pauli_string_list[0])
         for i_string in range(1, len(hamiltonian.pauli_string_list)):
             hamiltonian_matrix += self.get_sparse(
-                hamiltonian.pauli_string_list[i_string],
+                hamiltonian.cjs[i_string]*hamiltonian.pauli_string_list[i_string],
             )
         return hamiltonian_matrix
 
