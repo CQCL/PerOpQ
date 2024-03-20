@@ -23,8 +23,8 @@ z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
 bc_modifier = 1
-nx = 3
-ny = 3
+nx = 2
+ny = 2
 n = nx * ny
 np.random.seed(0)
 for i in range(n):
@@ -36,11 +36,11 @@ for i in range(n):
     y_list.append(yi)
 term_list = []
 for i in range(n):
-    # term_list.append( z_list[i])
-    term_list.append(np.random.rand() * z_list[i])
+    term_list.append( z_list[i])
+    # term_list.append(np.random.rand() * z_list[i])
 for i in range(n):
-    # term_list.append( x_list[i])
-    term_list.append(np.random.rand() * x_list[i])
+    term_list.append( x_list[i])
+    # term_list.append(np.random.rand() * x_list[i])
 V = -1
 # vertical bonds
 for col in range(nx):
@@ -50,8 +50,8 @@ for col in range(nx):
     print("vertical bonds")
     for isite in range(len(v_list) - bc_modifier):
         term_list.append(
-            np.random.rand()*z_list[v_list[isite]] * z_list[v_list[(isite + 1) % len(v_list)]],
-            # z_list[v_list[isite]] * z_list[v_list[(isite + 1) % len(v_list)]],
+            # np.random.rand()*z_list[v_list[isite]] * z_list[v_list[(isite + 1) % len(v_list)]],
+            z_list[v_list[isite]] * z_list[v_list[(isite + 1) % len(v_list)]],
         )
         print(v_list[isite], v_list[(isite + 1) % len(v_list)])
 
@@ -90,7 +90,7 @@ state_init[random_integer] = 1.0
 energy = state_init.T @ h_ising_matrix @ state_init
 # print("unconstrained ")
 # print("-------")
-nlayer = 3
+nlayer = 1
 variational_unitary = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
 variational_unitary.set_theta_to_trotter()
 for itime,time in enumerate(time_list):
@@ -134,7 +134,7 @@ for itime,time in enumerate(time_list):
     theta_flat = variational_unitary.flatten_theta(variational_unitary.theta)
     res = opt.optimize_arbitrary(
         variational_unitary=variational_unitary,
-        order=3,
+        order=2,
         unconstrained=True,
         initial_guess=theta_flat,
     )
@@ -154,7 +154,7 @@ for time in time_list:
     theta_flat = variational_unitary_c.flatten_theta(variational_unitary_c.theta)
     res = opt.optimize_arbitrary(
         variational_unitary=variational_unitary_c,
-        order=4,
+        order=3,
         unconstrained=True,
         initial_guess=theta_flat
     )  # ,

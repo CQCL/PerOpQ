@@ -191,10 +191,20 @@ class VariationalUnitary:
         return np.real(-chi_tensor.T @ trace_tensor @ chi_tensor)
 
     def c2_squared_test(self, theta: npt.ArrayLike = ()) -> float:
+        def product_dagger(string1,string2):
+            if string1!=0 and string2!=0:
+                import copy
+                string_dag = copy.deepcopy(string2)
+                string_dag.coefficient = np.conjugate(string_dag.coefficient)
+                return string1*string_dag
+            else:
+                return 0
         self.update_theta(theta)
         full_term_list = []
+        full_term_list_without_theta = []
         for layer in range(self.depth):
             for iterm in range(self.n_terms):
+                full_term_list_without_theta.append(self.cjs[iterm]*self.pauli_string_list[iterm])
                 full_term_list.append(
                     -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm],
                 )
@@ -212,13 +222,17 @@ class VariationalUnitary:
                 )
         trace_sum = 0
         trace_list = []
+        # First order
+        # for j in range(number_of_terms):
+        #     commutator_list.append(1j*full_term_list_without_theta[j])
+        #     indices_list.append((theta_index_list[j]))
         for commutator_i in commutator_list:
             for commutator_j in commutator_list:
-                product_commutator: PauliString = commutator_i * commutator_j
-                # print("product commutator ",product_commutator)
+                # product_commutator: PauliString = commutator_i * commutator_j
+                product_commutator: PauliString = product_dagger(commutator_i,commutator_j)
                 if product_commutator != 0.0:
                     trace_sum += product_commutator.normalized_trace()
-        return -trace_sum
+        return trace_sum
 
     def c2_square_gradient_test(self, theta: npt.ArrayLike = ()) -> npt.ArrayLike:
         self.update_theta(theta)
@@ -296,19 +310,33 @@ class VariationalUnitary:
         return grad
 
     def c3_squared_test(self, theta: npt.ArrayLike = ()) -> float:
+        def product_dagger(string1,string2):
+            if string1!=0 and string2!=0:
+                import copy
+                string_dag = copy.deepcopy(string2)
+                string_dag.coefficient = np.conjugate(string_dag.coefficient)
+                return string1*string_dag
+            else:
+                return 0
         self.update_theta(theta)
         full_term_list = []
+        full_term_list_without_theta = []
         theta_index_list = []
         for layer in range(self.depth):
             for iterm in range(self.n_terms):
                 full_term_list.append(
                     -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm],
                 )
+                full_term_list_without_theta.append(self.cjs[iterm]*self.pauli_string_list[iterm])
                 theta_index_list.append((layer, iterm))
         number_of_terms = len(full_term_list)
-        # Second order
         commutator_list = []
         indices_list = []
+        # First order
+        # for j in range(number_of_terms):
+        #     commutator_list.append(1j*full_term_list_without_theta[j])
+        #     indices_list.append((theta_index_list[j]))
+        # Second order
         for j in range(number_of_terms):
             for i in range(j, number_of_terms):
                 commutator_list.append(
@@ -382,7 +410,9 @@ class VariationalUnitary:
         for i, commutator_i in enumerate(commutator_list):
             for commutator_j in commutator_list:
                 product_commutator: PauliString = commutator_i * commutator_j
+                # product_commutator: PauliString = product_dagger(commutator_i,commutator_j)
                 # print("product commutator ",product_commutator)
                 if product_commutator != 0.0:
                     trace_sum -= product_commutator.normalized_trace()
+
         return trace_sum

@@ -74,14 +74,14 @@ class Optimizer:
             optimized_results = scipy.optimize.minimize(
                 variational_norm.calculate_norm,
                 x0,
-                jac=variational_norm.get_numerical_gradient,
+                # jac=variational_norm.get_numerical_gradient,
             )
         else:
             optimized_results = scipy.optimize.minimize(
                 variational_norm.calculate_norm,
                 x0,
                 tol=tol,
-                jac=variational_norm.get_numerical_gradient,
+                # jac=variational_norm.get_numerical_gradient,
             )
         return optimized_results
 

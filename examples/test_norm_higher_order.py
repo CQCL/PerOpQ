@@ -84,10 +84,10 @@ for time in time_list:
     variational_unitary = VU(h_ising, number_of_layer=nlayer, time=time)
     variational_unitary.set_theta_to_trotter()
     c2test = variational_unitary.c2_squared_test(variational_unitary.theta)
-    # c2 = variational_unitary.c2_squared(variational_unitary.theta)
-    # print("second order")
-    # print(c2test)
-    # print(c2)
+    c2 = variational_unitary.c2_squared(variational_unitary.theta)
+    print("second order")
+    print(c2test)
+    print(c2)
     print("third order")
     c3test = variational_unitary.c3_squared_test(variational_unitary.theta)
     c2test = variational_unitary.c2_squared_test(variational_unitary.theta)
@@ -99,7 +99,6 @@ for time in time_list:
     c3 = variational_norm.calculate_norm(variational_unitary.theta)
     print("c3 ", c3)
     print("c3_test ", c3test)
-    print("c2_test",c2test)
     import sys
 
     sys.exit()

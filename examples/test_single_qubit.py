@@ -21,29 +21,98 @@ def expectation_value(state, obs_list):
         expectation_value_list.append(state.T.conj() @ obs @ state)
     return expectation_value_list
 
+def get_bch_norm(variational_unitary,order):
+    variational_norm = VariationalNorm(
+        variational_unitary=variational_unitary, order=order, unconstrained=True
+    )
+    variational_norm.get_commutators()
+    variational_norm.get_traces()
+    c3 = variational_norm.calculate_norm(variational_unitary.theta)
+    return c3
+    
 
 #Hardcode the analytical function
-def analytics(order,time):
-    def analytic_perturbative_norm_2(theta):
+class Analytics:
+    def __init__(self,order,time):
+        self.order = order
+        self.time = time    
+    def analytic_perturbative_norm_2(self,theta):
         x = -1j*theta[0]
         y = -1j*theta[1]
-        first_order = (-1j*time-x)*(+1j*time+x) + (-1j*time-y)*(+1j*time+y)
+        first_order = (-1j*self.time-x)*(+1j*self.time+x) + (-1j*self.time-y)*(+1j*self.time+y)
         second_order = x**2*y**2
         return np.real(first_order+second_order)
-    def analytic_perturbative_norm_3(theta):
+    def analytic_perturbative_norm_3(self,theta):
         x = -1j*theta[0]
         y = -1j*theta[1]
-        second_order = analytic_perturbative_norm_2(theta)
-        third_order = -(4/12)**2*x**4*y**2-(4/12)**2*x**2*y**4
+        second_order = self.analytic_perturbative_norm_2(theta)
+        third_order = -(4.0/12.0)**2*x**4*y**2-(4.0/12.0)**2*x**2*y**4
+        third_order += (8.0/12.0)*(-1j*self.time-x)*x*y**2
+        third_order += (8.0/12.0)*(-1j*self.time-y)*x**2*y
+        print("third order",third_order)
         return second_order+np.real(third_order)
-    def optimize(order,theta_init):
-        if order==2:
-            optimized_results = scipy.optimize.minimize(analytic_perturbative_norm_2, theta_init)
-        if order ==3:
-            optimized_results = scipy.optimize.minimize(analytic_perturbative_norm_3, theta_init)
+    def optimize(self,theta_init):
+        if self.order==2:
+            optimized_results = scipy.optimize.minimize(self.analytic_perturbative_norm_2, theta_init)
+        if self.order ==3:
+            optimized_results = scipy.optimize.minimize(self.analytic_perturbative_norm_3, theta_init)
         return optimized_results
-    return optimize(order,[time_list[0],time_list[0]])
-        
+
+class Analitics_x_y_x:
+                
+    def __init__(self,order,time):
+        self.order = order
+        self.time = time    
+
+    def trace_list_list(self,alist):
+        def trace_list(alist):
+            s=0
+            for element_a in alist:
+                for element_b in alist:
+                    s+=element_a*np.conjugate(element_b)
+            return s
+        s= 0
+        for the_list in alist:
+            s+=trace_list(the_list)
+        return s
+
+    def analytic_perturbative_norm_2(self,theta):
+        x = -1j*theta[0]
+        y = -1j*theta[1]
+        x2 = -1j*theta[2]
+        term_list_x = []
+        term_list_x.append((-1j*self.time-x))
+        term_list_x.append((-1j*self.time-x2))
+        term_list_y = []
+        term_list_y.append(-1j*self.time-y)
+        term_list_z = [+1j*y*x2-1j*x*y]
+        return self.trace_list_list([term_list_x,term_list_y,term_list_z])
+
+    def analytic_perturbative_norm_3(self,theta):
+        x = -1j*theta[0]
+        y = -1j*theta[1]
+        x2 = -1j*theta[2]
+        term_list_x = []
+        term_list_x.append((-1j*self.time-x))
+        term_list_x.append((-1j*self.time-x2))
+        term_list_x.append(-(4.0/12.0)*y**2*x2)
+        term_list_y = []
+        term_list_y.append(-1j*self.time-y)
+        term_list_y.append(+x*y*x2)
+        term_list_y.append(+(4.0/12.0)*x*y*x2)
+        term_list_y.append(-(4.0/12.0)*y*x2**2)
+        term_list_y.append(-(4.0/12.0)*x**2*y)
+        term_list_z = [+1j*y*x2-1j*x*y]
+        return self.trace_list_list([term_list_x,term_list_y,term_list_z])
+
+    def optimize(self,theta_init):
+        if self.order==2:
+            optimized_results = scipy.optimize.minimize(self.analytic_perturbative_norm_2, theta_init)
+        if self.order ==3:
+            optimized_results = scipy.optimize.minimize(self.analytic_perturbative_norm_3, theta_init)
+        return optimized_results
+
+            
 #############
 # Options 
 # Random?
@@ -69,9 +138,10 @@ for i in range(n):
 term_list = []
 term_list.append(x_list[0])
 term_list.append(y_list[0])
+term_list.append(x_list[0])
 # Ising model
 h_ising = Hamiltonian(pauli_string_list=term_list)
-time_list = [0.3]
+time_list = [0.4]
 ed = ED(number_of_qubits=n)
 h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
 
@@ -96,6 +166,10 @@ energy = state_init.T @ h_ising_matrix @ state_init
 nlayer = 1
 variational_3_unitary = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
 variational_3_unitary.set_theta_to_trotter()
+###################################
+#Analytics order 3
+analytics = Analitics_x_y_x(order=3,time=time_list[0])
+res_analytics = analytics.optimize([time_list[0],time_list[0],time_list[0]])
 for itime,time in enumerate(time_list):
     variational_3_unitary.time=time
     trotter_unitary = copy.deepcopy(variational_3_unitary)
@@ -110,8 +184,24 @@ for itime,time in enumerate(time_list):
     )
     print("order 3 res ", res)
 
-res = analytics(order=3,time=time_list[0])
-print("res analytics 3 ",res)
+####################################
+# See if the norm is the same for the analytics and implementation
+# theta_flat = variational_3_unitary.flatten_theta(variational_3_unitary.theta)
+# norm_implementation = get_bch_norm(variational_3_unitary,order=3)
+# second_order_implementation = get_bch_norm(variational_3_unitary,order=2)
+# print("third order implementation ",norm_implementation-second_order_implementation)
+# norm_analytics = analytics.analytic_perturbative_norm_3(theta_flat)
+# norm_test = variational_3_unitary.c2_squared_test(variational_3_unitary.theta)
+# print("implementation ",norm_implementation)
+# print("analytics ",norm_analytics)
+# print("test ",norm_test)
+###################################
+
+print("res analytics 3 ",res_analytics)
+x_analytics = res_analytics.x
+# analytics_unitary = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
+# analytics_unitary.theta = np.array(x_analytics).reshape((1,h_ising.get_n_terms()))
+# variational_3_unitary = analytics_unitary
 
 variational_unitary_c = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
 variational_unitary_c.set_theta_to_trotter()
@@ -129,7 +219,8 @@ for time in time_list:
 
 ########
 # Do the optimization with ExactUnitary
-res = analytics(order=2,time=time_list[0])
+analytics = Analytics(order=2,time=time_list[0])
+res = analytics.optimize([time_list[0],time_list[0]])
 print("res analytics ",res)
 exact_unitary = ExactUnitary(h_ising, number_of_layer=nlayer, time=time_list[0],number_of_qubits=n)
 exact_unitary.set_theta_to_trotter()

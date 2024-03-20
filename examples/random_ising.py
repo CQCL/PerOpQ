@@ -26,8 +26,8 @@ z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
 bc_modifier = 1
-nx = 3
-ny = 3
+nx = 2
+ny = 2
 n = nx*ny
 for i in range(n):
     zi = PauliString.from_pauli_sequence(paulis=[Pauli.Z], start_qubit=i)
@@ -68,13 +68,14 @@ h_ising = Hamiltonian(pauli_string_list=term_list)
 # time_list=[0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.3,1.6,1.9]
 # time_list = [0.001,0.005,0.01,0.02,0.03,0.04,0.05]
 time_list = [0.3]
+nlayer = 1
 ed =  ED(number_of_qubits=n)
 h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
 if norm_mode:
     trotter_error_list = []
     variational_error_list = []
     for time in time_list:
-        variational_unitary = VariationalUnitary(h_ising, number_of_layer=3, time=time)
+        variational_unitary = VariationalUnitary(h_ising, number_of_layer=nlayer, time=time)
         variational_unitary.set_theta_to_trotter()
         trotter_error = ed.get_error(variational_unitary=variational_unitary,hamiltonian=h_ising)
         opt = Optimizer()
@@ -118,7 +119,7 @@ if observable_mode:
     state_init = np.array([1.0+0.0j]+[0.0]*(2**n-1))
     energy = state_init.T@h_ising_matrix@state_init
     for time in time_list:
-        variational_unitary = VariationalUnitary(h_ising, number_of_layer=3, time=time)
+        variational_unitary = VariationalUnitary(h_ising, number_of_layer=nlayer, time=time)
         variational_unitary.set_theta_to_trotter()
         state_trotter = ed.apply_variational_to_state(variational_unitary,state_init)
         state_continuous = ed.apply_continuous_to_state(hamiltonian=h_ising,time=time,state = state_init)

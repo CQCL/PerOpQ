@@ -15,7 +15,7 @@ class UnconstrainedVariationalUnitary(VariationalUnitary):
             if self.depth == 1 and new_array.shape == (1, self.n_terms):
                 pass
             else:
-                error_message = "Wrong length provided."
+                error_message = "Wrong length provided. Shape is"+str(new_array.shape)+" required is "+str((1, self.n_terms))
                 raise ValueError(error_message)
         self.theta = new_array
 

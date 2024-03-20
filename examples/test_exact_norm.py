@@ -25,14 +25,14 @@ def expectation_value(state, obs_list):
 # Random?
 random_hamiltonian= True
 # Tilted or transverse?
-hamiltonian_type = 'transverse'
+hamiltonian_type = 'tilted'
 
 z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
 bc_modifier = 1
-nx = 2
-ny = 2
+nx = 3
+ny = 3
 n = nx * ny
 np.random.seed(0)
 for i in range(n):
@@ -91,7 +91,7 @@ for site in start_sites:
 
 # Ising model
 h_ising = Hamiltonian(pauli_string_list=term_list)
-time_list = [0.1]
+time_list = [0.3]
 ed = ED(number_of_qubits=n)
 h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
 
@@ -114,6 +114,22 @@ random_integer = np.random.randint(low=0,high=2**n)
 state_init[random_integer] = 1.0
 energy = state_init.T @ h_ising_matrix @ state_init
 nlayer = 3
+
+variational_unitary_c = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
+variational_unitary_c.set_theta_to_trotter()
+trotter_unitary = copy.deepcopy(variational_unitary_c)
+for time in time_list:
+    variational_unitary_c.time = time
+    opt = Optimizer()
+    theta_flat = variational_unitary_c.flatten_theta(variational_unitary_c.theta)
+    res = opt.optimize_arbitrary(
+        variational_unitary=variational_unitary_c,
+        order=2,
+        unconstrained=True,
+    )  
+    theta_flat = variational_unitary_c.flatten_theta(variational_unitary_c.theta)
+    print("order 2 res ", res)
+
 variational_3_unitary = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
 variational_3_unitary.set_theta_to_trotter()
 for itime,time in enumerate(time_list):
@@ -128,22 +144,8 @@ for itime,time in enumerate(time_list):
         unconstrained=True,
         initial_guess=theta_flat,
     )
+    theta_flat = variational_3_unitary.flatten_theta(variational_3_unitary.theta)
     print("order 3 res ", res)
-
-variational_unitary_c = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
-variational_unitary_c.set_theta_to_trotter()
-trotter_unitary = copy.deepcopy(variational_unitary_c)
-for time in time_list:
-    variational_unitary_c.time = time
-    opt = Optimizer()
-    theta_flat = variational_unitary_c.flatten_theta(variational_unitary_c.theta)
-    res = opt.optimize_arbitrary(
-        variational_unitary=variational_unitary_c,
-        order=2,
-        unconstrained=True,
-    )  
-    print("order 2 res ", res)
-
 ########
 # Do the optimization with ExactUnitary
 

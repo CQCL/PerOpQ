@@ -5,6 +5,7 @@ import numpy as np
 from peropq import commutators
 from peropq.pauli import PauliString
 from peropq.variational_unitary import VariationalUnitary
+import copy
 
 """
 BCH formula given by:
@@ -23,7 +24,7 @@ class NormTerm:
 
     pauli_string: PauliString
     order: int
-    coefficient: float
+    coefficient: complex
     theta_indices: list[int]
 
     def pretty_print(self):
@@ -34,8 +35,6 @@ class NormTerm:
             pauli_print_string += str(self.pauli_string.qubit_pauli_map[akey])
             pauli_print_string += str(akey) + " "
         print(self.coefficient, "*", pauli_print_string, self.theta_indices)
-        # print("theta indices ",self.theta_indices)
-        # print("***")
 
 
 def commutator(aterm: NormTerm, other: NormTerm) -> NormTerm:
@@ -84,7 +83,7 @@ class VariationalNorm:
             #2nd order with terms of order 3
             x_y_4 = self.compute_commutator_sum([new_term], self.terms[2])
             for aterm in x_y_4:
-                aterm.coefficient = -0.5 * aterm.coefficient
+                aterm.coefficient = +0.5 * aterm.coefficient
             self.terms[3] += x_y_4
             # 3rd order with terms of order 2
             x_x_y_4 = self.compute_commutator_sum(
@@ -113,7 +112,7 @@ class VariationalNorm:
             # Commutators with terms of order 2:
             x_y_3 = self.compute_commutator_sum([new_term], self.terms[1])
             for aterm in x_y_3:
-                aterm.coefficient = -0.5 * aterm.coefficient
+                aterm.coefficient = +0.5 * aterm.coefficient
             self.terms[2] += x_y_3
             x_x_y_3 = self.compute_commutator_sum(
                 [new_term],
@@ -125,9 +124,9 @@ class VariationalNorm:
                 self.compute_commutator_sum(self.terms[0], [new_term]),
             )
             for i_norm_term, norm_term in enumerate(x_x_y_3):
-                norm_term.coefficient = -(1.0 / 12.0) * norm_term.coefficient
+                norm_term.coefficient = +(1.0 / 12.0) * norm_term.coefficient
             for i_norm_term, norm_term in enumerate(y_y_x_3):
-                norm_term.coefficient = -(1.0 / 12.0) * norm_term.coefficient
+                norm_term.coefficient = +(1.0 / 12.0) * norm_term.coefficient
             self.terms[2] += x_x_y_3
             self.terms[2] += y_y_x_3
         # Second order:
@@ -189,8 +188,14 @@ class VariationalNorm:
                     theta_indices=[(None, None)],
                 )
                 self.terms[0].append(new_term)
+        # for aterm in self.terms[2]:
+        #     aterm.pretty_print()
 
     def get_traces(self):
+        def string_string_dagger(string1,string2):
+            string_dagger:PauliString = copy.deepcopy(string2)
+            string_dagger.coefficient = np.conjugate(string_dagger.coefficient)
+            return string1*string_dagger
         self.indices: list[tuple] = []
         self.trace_list: list[float] = []
         self.all_the_terms: list[NormTerm] = []
@@ -201,10 +206,14 @@ class VariationalNorm:
         for i_term, a_term in enumerate(self.all_the_terms):
             for j_term, another_term in enumerate(self.all_the_terms):
                 product_commutators: PauliString = (
-                    a_term.pauli_string * another_term.pauli_string
+                    # a_term.pauli_string * another_term.pauli_string
+                    string_string_dagger(a_term.pauli_string,another_term.pauli_string)
                 )
                 trace: complex = product_commutators.normalized_trace()
                 if trace:
+                    # print("a_term ",a_term)
+                    # print("another_term ",another_term)
+                    # print("trace ",trace)
                     self.indices.append((i_term, j_term))
                     self.trace_list.append(trace)
         self.calculated_trace = True
@@ -251,10 +260,16 @@ class VariationalNorm:
                 for i_theta in right_term.theta_indices:
                     if None not in i_theta:
                         theta_coeff *= self.variational_unitary.theta[i_theta]
+                # print("left right contribution")
+                # print(left_term)
+                # print(right_term)
+                # print(left_term.coefficient * right_term.coefficient * trace)
+                # breakpoint()
                 s_norm += (
-                    theta_coeff * left_term.coefficient * right_term.coefficient * trace
+                    # theta_coeff * left_term.coefficient * right_term.coefficient * trace
+                    theta_coeff * left_term.coefficient * np.conjugate(right_term.coefficient) * trace
                 )
-        return -s_norm
+        return +s_norm
 
     def get_analytical_gradient(self):
         def get_i_derivative(theta_indices, theta_index):
