@@ -53,7 +53,7 @@ optional = true
 sphinx = "^7.2.6"
 sphinx-autodoc-typehints = "^1.22"
 furo = "^2024.1.29"
-myst-parser = "^2.0.0"
+myst-parser = ">=2,<4"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
