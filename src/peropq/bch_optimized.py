@@ -43,9 +43,7 @@ def loop_over_trace(trace_list,indices,theta,min_order,all_the_order,all_the_ind
             s_norm += (
                 theta_coeff * left_term_coefficient * np.conjugate(right_term_coefficient) * trace
             )
-        # We need: 1) all_the_order 2) all_the_theta_indices 3) all_the_coefficients
     return s_norm
-# s_norm = loop_over_trace(self.trace_list,self.all_the_terms,self.indices,self.variational_unitary.theta,min_order)
 
 @dataclass()
 class NormTerm:
@@ -70,10 +68,6 @@ class NormTerm:
             pauli_print_string += str(akey) + " "
         print(self.coefficient, "*", pauli_print_string, self.theta_indices)
 
-# We need:
-# list_pauli_string
-# list_coefficient
-# list_theta_indices
 def commutator(aterm: NormTerm, other: NormTerm) -> NormTerm:
     commutator_string = commutators.get_commutator_pauli_tensors(
         aterm.pauli_string,
@@ -303,24 +297,6 @@ class VariationalNorm:
         else:
             min_order = 1
         # The following is the old not optimized code
-        """
-        for i_trace, trace in enumerate(self.trace_list):
-            theta_coeff: float = 1.0
-            left_term = self.all_the_terms[self.indices[i_trace][0]]
-            right_term = self.all_the_terms[self.indices[i_trace][1]]
-            if left_term.order > min_order and right_term.order > min_order:
-                for i_theta in left_term.theta_indices:
-                    if NOTHING not in i_theta:
-                        theta_coeff *= self.variational_unitary.theta[i_theta]
-                print("theta_coeff",theta_coeff)
-                for i_theta in right_term.theta_indices:
-                    if NOTHING not in i_theta:
-                        theta_coeff *= self.variational_unitary.theta[i_theta]
-                s_norm += (
-                    theta_coeff * left_term.coefficient * np.conjugate(right_term.coefficient) * trace
-                )
-        # return +s_norm
-        """
         s_norm = loop_over_trace(np.array(self.trace_list),np.array(self.indices),self.variational_unitary.theta,min_order,np.array(self.all_the_order),self.all_the_indices,np.array(self.begin_list),np.array(self.end_list),np.array(self.all_the_coefficients))
         return np.real(s_norm)
 
