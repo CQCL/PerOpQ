@@ -2,7 +2,8 @@ import copy
 
 import matplotlib.pyplot as plt
 import numpy as np
-from peropq.bch import VariationalNorm
+# from peropq.bch import VariationalNorm
+from peropq.bch_optimized import VariationalNorm
 from peropq.ed_module import ExactDiagonalization as ED
 from peropq.hamiltonian import Hamiltonian
 from peropq.optimizer import Optimizer
@@ -23,8 +24,8 @@ z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
 bc_modifier = 1
-nx = 2
-ny = 2
+nx = 3
+ny = 3
 n = nx * ny
 np.random.seed(0)
 for i in range(n):
@@ -90,7 +91,7 @@ state_init[random_integer] = 1.0
 energy = state_init.T @ h_ising_matrix @ state_init
 # print("unconstrained ")
 # print("-------")
-nlayer = 1
+nlayer = 2
 variational_unitary = VU(h_ising, number_of_layer=nlayer, time=time_list[0])
 variational_unitary.set_theta_to_trotter()
 for itime,time in enumerate(time_list):

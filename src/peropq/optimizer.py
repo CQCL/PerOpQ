@@ -5,7 +5,8 @@ import numpy.typing as npt
 import scipy  # type: ignore[import-untyped]
 
 from peropq.ansatz_bch import AnsatzVariationalNorm
-from peropq.bch import VariationalNorm
+# from peropq.bch import VariationalNorm
+from peropq.bch_optimized import VariationalNorm
 from peropq.hamiltonian import Hamiltonian
 from peropq.unconstrained_variational_unitary import UnconstrainedVariationalUnitary
 from peropq.variational_unitary import VariationalUnitary
