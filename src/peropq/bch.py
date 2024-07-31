@@ -96,9 +96,9 @@ class VariationalNorm:
                 self.compute_commutator_sum(self.terms[1], [new_term]),
             )
             for i_norm_term, norm_term in enumerate(x_x_y_4):
-                norm_term.coefficient = -(1.0 / 12.0) * norm_term.coefficient
+                norm_term.coefficient = +(1.0 / 12.0) * norm_term.coefficient
             for i_norm_term, norm_term in enumerate(y_y_x_4):
-                norm_term.coefficient = -(1.0 / 12.0) * norm_term.coefficient
+                norm_term.coefficient = +(1.0 / 12.0) * norm_term.coefficient
             self.terms[3] += x_x_y_4
             self.terms[3] += y_y_x_4
             #4th order with terms of order 1
