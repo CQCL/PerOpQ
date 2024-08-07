@@ -37,7 +37,6 @@ class UnconstrainedVariationalUnitary(VariationalUnitary):
             theta_trotter: npt.NDArray = np.zeros((self.depth, self.n_terms))
             for j in range(self.n_terms):
                 theta_trotter[0, j] = self.cjs[j] * self.time
-        print("theta trotter initial ", theta_trotter.shape)
         return theta_trotter
 
     def set_theta_to_trotter(self) -> None:

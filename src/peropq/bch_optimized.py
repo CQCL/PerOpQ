@@ -15,7 +15,6 @@ Z = X + Y + 1/2 [X,Y] + 1/12 [X,[X,Y]] - 1/12 [Y,[X,Y]] + ...
 NOTHING = -100000000
 @jit(nopython=True)
 def loop_over_trace(trace_list,indices,theta,min_order,all_the_order,all_the_indices,begin_list,end_list,all_the_coefficients):
-    print("calling norm")
     s_norm = 0.0
     for i_trace, trace in enumerate(trace_list):
         theta_coeff: float = 1.0
