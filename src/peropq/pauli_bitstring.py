@@ -46,6 +46,32 @@ class PauliString:
         """
         return bit_string_commutation(bit_string1= self.bit_string, bit_string2=other.bit_string)
 
+    def get_pauli(self,qubit:int):
+        if self.bit_string[2*qubit]==1 and self.bit_string[2*qubit+1]==1:
+            return 'Y'
+        elif self.bit_string[2*qubit]==1 and self.bit_string[2*qubit+1]==0:
+            return 'X'
+        elif self.bit_string[2*qubit]==0 and self.bit_string[2*qubit+1]==1:
+            return 'Z'
+        else:
+            return 'I'
+
+    def normalized_trace(self) -> complex:
+        """Returns `2^(-n)*Tr(self)`.
+
+        The trace is just the coefficient times the product of the traces of the Paulis
+        over all n qubits (including any identities on qubits not explicitly contained in the qubit_pauli_map). Since
+        `Tr(Pauli.I) == 2`, and `Tr(Pauli.X) == Tr(Pauli.Y) == Tr(Pauli.Z) == 0`, the result will either be 0 (if any
+        of the Paulis is not the Identity) or `self.coefficient` (if all paulis are the identity).
+        """
+        if np.nonzero(self.bit_string)[0].shape==(0,):
+            return self.coefficient
+        return 0
+
+    def product_and_normalized_trace(self,other:PauliString) -> complex:
+        pass
+    
+
 def pauli_from_string(string: str, length: int, start_qubit: int = 0, coefficient: complex = 1.0)->PauliString:
     assert start_qubit+len(string) <= length
     bit_string: npt.NDArray = np.zeros(2*length,dtype=int)
@@ -99,6 +125,15 @@ def _pauli_string_mult(
         pauli_string1.bit_string, pauli_string2.bit_string)
     return PauliString(bit_string=new_bit_string, coefficient=pauli_string1.coefficient*pauli_string2.coefficient*(1j)**new_i_power)
 
+def pauli_mul_dagger(
+    pauli_string1: PauliString,
+    pauli_string2: PauliString,
+    )-> PauliString:
+    N = len(pauli_string1.bit_string)
+    new_bit_string = np.bitwise_xor(pauli_string1.bit_string, pauli_string2.bit_string)
+    new_i_power = _get_i_power(
+        pauli_string1.bit_string, pauli_string2.bit_string)
+    return PauliString(bit_string=new_bit_string, coefficient=pauli_string1.coefficient*np.conj(pauli_string2.coefficient)*(1j)**new_i_power)
 @njit(cache=True)
 def bit_string_commutation(bit_string1:npt.NDArray, bit_string2: npt.NDArray) -> bool:
     """

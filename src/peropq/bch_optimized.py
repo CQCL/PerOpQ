@@ -4,9 +4,11 @@ import numpy as np
 from numba import jit
 
 from peropq import commutators
-from peropq.pauli import PauliString
+# from peropq.pauli import PauliString
+from peropq.pauli_bitstring import PauliString,pauli_mul_dagger
 from peropq.variational_unitary import VariationalUnitary
 import copy
+import rich
 
 """
 BCH formula given by:
@@ -242,19 +244,15 @@ class VariationalNorm:
                     theta_indices=[(NOTHING, NOTHING)],
                 )
                 self.terms[0].append(new_term)
+        rich.print("Calculated the commutators")
         # for aterm in self.terms[2]:
         #     aterm.pretty_print()
 
     def get_traces(self):
-        def string_string_dagger(string1,string2):
-            string_dagger:PauliString = copy.deepcopy(string2)
-            string_dagger.coefficient = np.conjugate(string_dagger.coefficient)
-            return string1*string_dagger
         self.indices: list[tuple] = []
         self.trace_list: list[float] = []
         self.all_the_terms: list[NormTerm] = []
         self.all_the_order: list[int] = []
-        # 2) all_the_theta_indices 3) all_the_coefficients
         self.all_the_theta_indices: list = []
         all_the_indices = []
         self.begin_list = []
@@ -270,22 +268,17 @@ class VariationalNorm:
                     all_the_indices.append(index_pair)
                 self.end_list.append(len(all_the_indices))
                 self.all_the_coefficients.append(a_term.coefficient)
-                # a_term.pretty_print()
         self.all_the_indices = np.array(all_the_indices)
-        # Test
         for i_term, a_term in enumerate(self.all_the_terms):
             for j_term, another_term in enumerate(self.all_the_terms):
                 product_commutators: PauliString = (
-                    # a_term.pauli_string * another_term.pauli_string
-                    string_string_dagger(a_term.pauli_string,another_term.pauli_string)
+                    pauli_mul_dagger(a_term.pauli_string,another_term.pauli_string)
                 )
                 trace: complex = product_commutators.normalized_trace()
                 if trace:
-                    # print("a_term ",a_term)
-                    # print("another_term ",another_term)
-                    # print("trace ",trace)
                     self.indices.append((i_term, j_term))
                     self.trace_list.append(trace)
+        rich.print("Calculated traces")
         self.calculated_trace = True
 
     def calculate_norm(self, theta):

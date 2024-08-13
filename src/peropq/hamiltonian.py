@@ -1,12 +1,12 @@
 from collections.abc import Sequence
 
-from peropq import pauli
+from peropq import pauli_bitstring
 
 
 class Hamiltonian:
     """Class representing the Hamilonian."""
 
-    def __init__(self, pauli_string_list: Sequence[pauli.PauliString]) -> None:
+    def __init__(self, pauli_string_list: Sequence[pauli_bitstring.PauliString]) -> None:
         """
         Initialization.
 

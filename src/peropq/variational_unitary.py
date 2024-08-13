@@ -9,7 +9,8 @@ from scipy.sparse import csr_array  # type: ignore[import-untyped]
 
 from peropq.commutators import get_commutator_pauli_tensors
 from peropq.hamiltonian import Hamiltonian
-from peropq.pauli import PauliString
+# from peropq.pauli import PauliString
+from peropq.pauli_bitstring import PauliString
 
 
 class VariationalUnitary:
@@ -55,7 +56,7 @@ class VariationalUnitary:
         for j in range(self.n_terms):
             for r in range(self.depth - 1):
                 self.theta[r, j] = new_array[r, j]
-            self.theta[self.depth - 1, j] = self.time * self.cjs[j]
+            self.theta[self.depth - 1, j] = self.time * np.real(self.cjs[j])
             for r in range(self.depth - 1):
                 self.theta[self.depth - 1, j] -= new_array[r, j]
 
@@ -69,7 +70,7 @@ class VariationalUnitary:
         else:
             theta_trotter: npt.NDArray = np.zeros((self.depth, self.n_terms))
             for j in range(self.n_terms):
-                theta_trotter[0, j] = self.cjs[j] * self.time
+                theta_trotter[0, j] = np.real(self.cjs[j]) * self.time
         return theta_trotter
 
     def flatten_theta(self, theta: npt.NDArray) -> npt.NDArray:

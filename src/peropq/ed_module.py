@@ -3,7 +3,7 @@ import scipy.sparse as sp  # type: ignore[import-untyped]
 from numpy import typing as npt
 
 from peropq.hamiltonian import Hamiltonian
-from peropq.pauli import Pauli, PauliString
+from peropq.pauli_bitstring import PauliString
 from peropq.variational_unitary import VariationalUnitary
 
 
@@ -18,20 +18,20 @@ class ExactDiagonalization:
         """
         self.number_of_qubits = number_of_qubits
 
-    def pauli_to_sparse(self, pauli: Pauli) -> sp.spmatrix:
+    def pauli_to_sparse(self, pauli: str) -> sp.spmatrix:
         """
         Converts a Pauli to a 2x2 sparse matrix.
 
         param: pauli to be converted.
         """
         match pauli:
-            case Pauli.I:
+            case 'I':
                 return sp.csc_matrix([[1.0, 0], [0, 1.0]], dtype=complex)
-            case Pauli.X:
+            case 'X':
                 return sp.csc_matrix([[0, 1.0], [1.0, 0]], dtype=complex)
-            case Pauli.Y:
+            case 'Y':
                 return sp.csc_matrix([[0, -1j], [1j, 0]], dtype=complex)
-            case Pauli.Z:
+            case 'Z':
                 return sp.csc_matrix([[1.0, 0.0], [0.0, -1.0]], dtype=complex)
 
     def get_sparse(self, pauli_string: PauliString) -> sp.spmatrix:
