@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 import numpy as np
-from numba import jit
+from numpy import typing as npt
+from numba import jit,njit
 
 from peropq import commutators
 # from peropq.pauli import PauliString
@@ -9,11 +10,22 @@ from peropq.pauli_bitstring import PauliString,pauli_mul_dagger
 from peropq.variational_unitary import VariationalUnitary
 import copy
 import rich
+import tracemalloc
 
 """
 BCH formula given by:
 Z = X + Y + 1/2 [X,Y] + 1/12 [X,[X,Y]] - 1/12 [Y,[X,Y]] + ...
 """
+
+@njit(cache=True)
+def _get_non_zero_trace_indices(bitstrings:npt.NDArray):
+    indices_list:list = []
+    for i in range(len(bitstrings)):
+        for j in range(len(bitstrings)):
+            if np.array_equal(bitstrings[i],bitstrings[j]):
+                indices_list.append((i,j))
+    return np.array(indices_list)
+
 NOTHING = -100000000
 @jit(nopython=True)
 def loop_over_trace(trace_list,indices,theta,min_order,all_the_order,all_the_indices,begin_list,end_list,all_the_coefficients):
@@ -258,9 +270,11 @@ class VariationalNorm:
         self.begin_list = []
         self.end_list = []
         self.all_the_coefficients: list[float] = []
+        all_the_bitstring_list:list[npt.NDarray] = []
         for order_index in range(self.order):
             for a_term in self.terms[order_index]:
                 self.all_the_terms.append(a_term)
+                all_the_bitstring_list.append(a_term.pauli_string.bit_string)
                 self.all_the_order.append(a_term.order)
                 self.begin_list.append(len(all_the_indices))
                 self.all_the_theta_indices.append(a_term.theta_indices)
@@ -269,6 +283,7 @@ class VariationalNorm:
                 self.end_list.append(len(all_the_indices))
                 self.all_the_coefficients.append(a_term.coefficient)
         self.all_the_indices = np.array(all_the_indices)
+        """
         for i_term, a_term in enumerate(self.all_the_terms):
             for j_term, another_term in enumerate(self.all_the_terms):
                 product_commutators: PauliString = (
@@ -278,10 +293,18 @@ class VariationalNorm:
                 if trace:
                     self.indices.append((i_term, j_term))
                     self.trace_list.append(trace)
+        """
+        # First calculate the traces which are not zero
+        self.indices = _get_non_zero_trace_indices(np.array(all_the_bitstring_list))
+        # Get the trace_list
+        for index_tuple in self.indices:
+            # Get the trace of the product -> coefficient1 * conj(coefficient2)
+            self.trace_list.append(self.all_the_terms[index_tuple[0]].pauli_string.coefficient*np.conj(self.all_the_terms[index_tuple[1]].pauli_string.coefficient))
         rich.print("Calculated traces")
         self.calculated_trace = True
 
     def calculate_norm(self, theta):
+        tracemalloc.start()
         if np.array(theta).shape[0] > self.variational_unitary.n_terms:
             # TODO: write a function unflatten theta
             try:
@@ -314,6 +337,8 @@ class VariationalNorm:
             min_order = 1
         # The following is the old not optimized code
         s_norm = loop_over_trace(np.array(self.trace_list),np.array(self.indices),self.variational_unitary.theta,min_order,np.array(self.all_the_order),self.all_the_indices,np.array(self.begin_list),np.array(self.end_list),np.array(self.all_the_coefficients))
+        print(tracemalloc.get_traced_memory())
+        tracemalloc.stop()
         return np.real(s_norm)
 
     def get_analytical_gradient(self):

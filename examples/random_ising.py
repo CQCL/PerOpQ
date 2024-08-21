@@ -26,8 +26,8 @@ z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
 bc_modifier = 1
-nx = 3
-ny = 3
+nx = 6
+ny = 6
 length = nx*ny
 n = nx*ny
 for i in range(n):
@@ -68,32 +68,42 @@ for site in start_sites:
 h_ising = Hamiltonian(pauli_string_list=term_list)
 # time_list=[0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.3,1.6,1.9]
 # time_list = [0.001,0.005,0.01,0.02,0.03,0.04,0.05]
-time_list = [0.05]
-nlayer = 2
-ed =  ED(number_of_qubits=n)
-h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
+time_list = [0.3]
+nlayer = 3
+if nx<4:
+    ed =  ED(number_of_qubits=n)
+try:
+    h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
+except:
+    pass
 if norm_mode:
-    for order in [2,3,4]:
+    for order in [4]:
         trotter_error_list = []
         variational_error_list = []
         for time in time_list:
             print("order ",order)
             variational_unitary = UnconstrainedVariationalUnitary(h_ising, number_of_layer=nlayer, time=time)
             variational_unitary.set_theta_to_trotter()
-            trotter_error = ed.get_error(variational_unitary=variational_unitary,hamiltonian=h_ising)
+            try:
+                trotter_error = ed.get_error(variational_unitary=variational_unitary,hamiltonian=h_ising)
+            except:
+                pass
             opt = Optimizer()
             res = opt.optimize_arbitrary(
                 variational_unitary=variational_unitary,
                 order=order,
                 unconstrained=True,
             )  
-            variational_error = ed.get_error(
-                variational_unitary=variational_unitary,
-                hamiltonian=h_ising,
-            )
-            variational_error_list.append(variational_error)
-            print("trotter_error ",trotter_error)
-            print("variational_error",variational_error_list[-1])
+            try:
+                variational_error = ed.get_error(
+                    variational_unitary=variational_unitary,
+                    hamiltonian=h_ising,
+                )
+                variational_error_list.append(variational_error)
+                print("trotter_error ",trotter_error)
+                print("variational_error",variational_error_list[-1])
+            except:
+                pass
 
     # plt.figure()
     # plt.plot(time_list,trotter_error_list,label='trotter',marker = 'o')

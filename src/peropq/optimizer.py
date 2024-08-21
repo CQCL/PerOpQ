@@ -71,7 +71,7 @@ class Optimizer:
         variational_norm.get_traces()
         # variational_norm.get_analytical_gradient()
         if tol == 0:
-            variational_norm.get_analytical_gradient()
+            # variational_norm.get_analytical_gradient()
             optimized_results = scipy.optimize.minimize(
                 variational_norm.calculate_norm,
                 x0,
