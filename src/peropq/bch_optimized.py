@@ -7,10 +7,10 @@ from numba import jit,njit
 from peropq import commutators
 # from peropq.pauli import PauliString
 from peropq.pauli_bitstring import PauliString,pauli_mul_dagger
-from peropq.variational_unitary import VariationalUnitary
+# from peropq.variational_unitary import VariationalUnitary
+from peropq.unconstrained_variational_unitary import UnconstrainedVariationalUnitary as VariationalUnitary
 import copy
 import rich
-import tracemalloc
 
 """
 BCH formula given by:
@@ -107,6 +107,7 @@ class VariationalNorm:
         for order_index in range(order):
             self.terms[order_index] = []
         self.unconstrained = unconstrained
+        self.calculated_trace=False
 
     def compute_commutator_sum(
         self,
@@ -304,7 +305,6 @@ class VariationalNorm:
         self.calculated_trace = True
 
     def calculate_norm(self, theta):
-        tracemalloc.start()
         if np.array(theta).shape[0] > self.variational_unitary.n_terms:
             # TODO: write a function unflatten theta
             try:
@@ -337,8 +337,6 @@ class VariationalNorm:
             min_order = 1
         # The following is the old not optimized code
         s_norm = loop_over_trace(np.array(self.trace_list),np.array(self.indices),self.variational_unitary.theta,min_order,np.array(self.all_the_order),self.all_the_indices,np.array(self.begin_list),np.array(self.end_list),np.array(self.all_the_coefficients))
-        print(tracemalloc.get_traced_memory())
-        tracemalloc.stop()
         return np.real(s_norm)
 
     def get_analytical_gradient(self):

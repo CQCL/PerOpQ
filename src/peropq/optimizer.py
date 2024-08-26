@@ -43,12 +43,14 @@ class Optimizer:
 
     def optimize_arbitrary(
         self,
-        variational_unitary: VariationalUnitary,
+        variational_unitary: UnconstrainedVariationalUnitary,
         order: float,
         initial_guess: Sequence[float] = [],
         tol: float = 0,
         unconstrained=False,
-    ) -> scipy.optimize.OptimizeResult:
+        cache = False,
+        init_variational_norm:VariationalNorm|None = None,
+    ) -> scipy.optimize.OptimizeResult|tuple[scipy.optimize.OptimizeResult,VariationalNorm]:
         """
         Perform the minimization.
 
@@ -62,13 +64,18 @@ class Optimizer:
         else:
             x0 = variational_unitary.get_initial_trotter_vector()
             x0 = variational_unitary.flatten_theta(x0)
-        variational_norm = VariationalNorm(
-            variational_unitary,
-            order=order,
-            unconstrained=unconstrained,
-        )
-        variational_norm.get_commutators()
-        variational_norm.get_traces()
+        if init_variational_norm == None:
+            variational_norm = VariationalNorm(
+                variational_unitary,
+                order=order,
+                unconstrained=unconstrained,
+            )
+
+            variational_norm.get_commutators()
+            variational_norm.get_traces()
+        else:
+            variational_norm = init_variational_norm
+
         # variational_norm.get_analytical_gradient()
         if tol == 0:
             # variational_norm.get_analytical_gradient()
@@ -84,6 +91,10 @@ class Optimizer:
                 tol=tol,
                 # jac=variational_norm.get_numerical_gradient,
             )
+        # Set the theta of the variational_norm to the optimized result
+        variational_unitary.theta = variational_unitary.unflatten_theta(optimized_results.x)
+        if cache:
+            return optimized_results,variational_norm
         return optimized_results
 
     def optimize_exact(
@@ -98,7 +109,7 @@ class Optimizer:
             x0 = variational_unitary.get_initial_trotter_vector()
             x0 = variational_unitary.flatten_theta(x0)
         
-        return scipy.optimize.minimize(exact_unitary.get_exact_norm, x0)
+        return scipy.optimize.minimize(exact_unitary.get_exact_norm, x0,tol=tol)
         
 
     def optimize_steps(

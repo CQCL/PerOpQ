@@ -20,11 +20,19 @@ class UnconstrainedVariationalUnitary(VariationalUnitary):
         self.theta = new_array
 
     def flatten_theta(self, theta: npt.NDArray) -> npt.NDArray:
-        """Returns the variational parameters as flatten depth*n_terms array. Useful to pass to a minimization function."""
+        """Returns an input theta as flatten depth*n_terms array. Useful to pass to a minimization function."""
         if self.depth > 1:
             return np.array(theta).reshape(self.depth * self.n_terms)
         else:
             return np.array(theta).reshape(self.n_terms)
+
+    def unflatten_theta(self, flat_theta:npt.NDArray) -> npt.NDArray:
+        """Returns the flattened variational parameters as an array with shape (depth,n_terms)."""
+        return np.array(flat_theta).reshape((self.depth , self.n_terms))
+
+    def get_flattened_theta(self) -> npt.NDArray:
+        """ Return the flatten current variational parameters"""
+        return self.flatten_theta(self.theta)
 
     def get_initial_trotter_vector(self) -> npt.NDArray:
         """Get the variational parameters corresponding to the Trotterization. Useful to initialize the optimization."""
