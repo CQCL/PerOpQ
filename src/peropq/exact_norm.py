@@ -17,6 +17,13 @@ class ExactUnitary(UnconstrainedVariationalUnitary):
         time: float,
         number_of_qubits: int,
         ):
+        """
+        Class representing a variational unitary which is optimized through an exact evaluation of the norm by means of exact diagonalization.
+        hamiltonian: target Hamiltonian
+        number_of_layers: number of layers to be optimized over
+        time: final time
+        number_of_qubits: number of qubits 
+        """
         super().__init__(
         hamiltonian,
         number_of_layer,
@@ -27,7 +34,11 @@ class ExactUnitary(UnconstrainedVariationalUnitary):
         self.exact_unitary = self.exact_diagonalization.get_continuous_time_evolution(hamiltonian=hamiltonian,time=time)
     
 
-    def get_exact_norm(self,theta):
+    def get_exact_norm(self,theta:npt.NDArray):
+        """
+        Get the exact norm:
+        theta: variational parameter for which the norm must be evaluated
+        """
         # Reshape theta
         theta_updated = np.array(theta).reshape((self.depth,self.n_terms))
         self.update_theta(theta_updated)

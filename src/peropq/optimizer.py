@@ -76,20 +76,16 @@ class Optimizer:
         else:
             variational_norm = init_variational_norm
 
-        # variational_norm.get_analytical_gradient()
         if tol == 0:
-            # variational_norm.get_analytical_gradient()
             optimized_results = scipy.optimize.minimize(
                 variational_norm.calculate_norm,
                 x0,
-                # jac=variational_norm.get_numerical_gradient,
             )
         else:
             optimized_results = scipy.optimize.minimize(
                 variational_norm.calculate_norm,
                 x0,
                 tol=tol,
-                # jac=variational_norm.get_numerical_gradient,
             )
         # Set the theta of the variational_norm to the optimized result
         variational_unitary.theta = variational_unitary.unflatten_theta(optimized_results.x)
@@ -103,77 +99,13 @@ class Optimizer:
         initial_guess: Sequence[float] = [],
         tol: float = 0,
     ):
+        """Optimize an instance of ExactUnitary"""
         if len(initial_guess) != 0:
             x0: npt.NDArray = np.array(initial_guess)
         else:
-            x0 = variational_unitary.get_initial_trotter_vector()
-            x0 = variational_unitary.flatten_theta(x0)
+            x0 = exact_unitary.get_initial_trotter_vector()
+            x0 = exact_unitary.flatten_theta(x0)
         
         return scipy.optimize.minimize(exact_unitary.get_exact_norm, x0,tol=tol)
         
 
-    def optimize_steps(
-        self,
-        hamiltonian: Hamiltonian,
-        final_time: float,
-        order: float,
-        dt_optimize: float,
-    ) -> tuple[scipy.optimize.OptimizeResult, VariationalUnitary]:
-        """
-        Try to optimize with increasing time steps instead of using Trotter
-        """
-        variational_unitary = VariationalUnitary(hamiltonian, 3, dt_optimize)
-        x0 = variational_unitary.get_initial_trotter_vector()
-        x0 = variational_unitary.flatten_theta(x0)
-        variational_norm = VariationalNorm(variational_unitary, order=2)
-        variational_norm.get_commutators()
-        variational_norm.get_traces()
-        optimized_results = scipy.optimize.minimize(variational_norm.calculate_norm, x0)
-        evolve_to_time = 2 * dt_optimize
-        while evolve_to_time < final_time:
-            print("evolve_to_time ", evolve_to_time)
-            variational_unitary = VariationalUnitary(hamiltonian, 3, evolve_to_time)
-            x0 = variational_unitary.get_initial_trotter_vector()
-            x0 = variational_unitary.flatten_theta(x0)
-            variational_norm = VariationalNorm(variational_unitary, order=2)
-            variational_norm.get_commutators()
-            variational_norm.get_traces()
-            optimized_results = scipy.optimize.minimize(
-                variational_norm.calculate_norm,
-                optimized_results.x,
-            )
-            evolve_to_time += dt_optimize
-        return optimized_results, variational_unitary
-
-    def optimize_ansatz(
-        self,
-        variational_unitary: UnconstrainedVariationalUnitary,
-        order: float,
-        initial_guess: Sequence[float],
-        hamiltonian: Hamiltonian,
-        tol: float = 0,
-    ) -> scipy.optimize.OptimizeResult:
-        if len(initial_guess) != 0:
-            x0: npt.NDArray = np.array(initial_guess)
-        else:
-            x0 = variational_unitary.get_initial_trotter_vector()
-            x0 = variational_unitary.flatten_theta(x0)
-        variational_norm = AnsatzVariationalNorm(
-            variational_unitary,
-            order=order,
-            hamiltonian=hamiltonian,
-        )
-        variational_norm.get_commutators()
-        variational_norm.get_traces()
-        if tol == 0:
-            optimized_results = scipy.optimize.minimize(
-                variational_norm.calculate_norm,
-                x0,
-            )
-        else:
-            optimized_results = scipy.optimize.minimize(
-                variational_norm.calculate_norm,
-                x0,
-                tol=tol,
-            )
-        return optimized_results
