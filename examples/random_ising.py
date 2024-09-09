@@ -10,16 +10,26 @@ import matplotlib.pyplot as plt
 import pickle
 
 
-def expectation_value(state, obs_list):
-    expectation_value_list = []
+def expectation_value(state: npt.NDArray, obs_list: list[scipy.sparse.spmatrix]):
+    """
+    Get the expectation value.
+    state: wave-function on which the observables need to be measured 
+    obs_list: list of observables
+    """
+    expectation_value_list: list[complex] = []
     for obs in obs_list:
         expectation_value_list.append(state.T.conj()@obs@state)
     return expectation_value_list
 
 
-def get_observale_different_times(state_init: npt.NDArray, variational_unitary: UnconstrainedVariationalUnitary, hamiltonian_matrix: scipy.sparse.spmatrix, obs_list: list, n_steps: int) -> tuple[list, list]:
+def get_observale_different_times(state_init: npt.NDArray, variational_unitary: UnconstrainedVariationalUnitary, hamiltonian_matrix: scipy.sparse.spmatrix, obs_list: list[scipy.sparse.spmatrix], n_steps: int) -> tuple[list, list]:
     """
     return the energy of hamiltonian and the expectation values of obs_list when applying variational_unitary to state_init n_steps time.
+    state_init: state to be evolved
+    variational_unitary: unitary to be applied
+    hamiltonian_matrix: matrix representing the Hamiltonian
+    obs_list: list of observables
+    n_steps: number of times the unitary needs to be applied.
     """
     expectation_value_list = []
     energy_list = []
@@ -36,6 +46,14 @@ def get_observale_different_times(state_init: npt.NDArray, variational_unitary: 
 
 
 def get_continuous_observables(state_init: npt.NDArray, hamiltonian: Hamiltonian, obs_list: list, time: float, n_steps: int):
+    """
+    Get the expectation value for observable under exact, continuous time evolution. Useful to compare with the results obtained from variational unitaries
+    state_init: state to be evolved
+    hamiltonian: Hamiltonian to be evolved under.
+    obs_list: list of observables
+    time: interval at which obs_list is measured
+    n_steps: number of measurement. The total time is equal to time*n_steps
+    """
     expectation_value_list = []
     energy_list = []
     state_continuous = state_init.copy()
@@ -50,14 +68,8 @@ def get_continuous_observables(state_init: npt.NDArray, hamiltonian: Hamiltonian
     return energy_list, expectation_value_list
 
 
-# Choose the mode
-# norm_mode = True
-norm_mode = False
-if norm_mode:
-    observable_mode = False
-else:
-    observable_mode = True
-
+# Construct the Hamiltonian
+# Construct the Pauli strings
 z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
@@ -77,8 +89,9 @@ term_list = []
 for i in range(n):
     term_list.append(1.0 * z_list[i])
     term_list.append(1.0 * x_list[i])
+# Define the Hamiltonian
 V = -1
-# vertical bonds
+# Vertical bonds
 for col in range(0, nx):
     v_list = []
     for site in range(col, n + 1 - nx + col, nx):
@@ -89,8 +102,7 @@ for col in range(0, nx):
             z_list[v_list[isite]] * z_list[v_list[(isite + 1) % len(v_list)]]
         )
         print(v_list[isite], v_list[(isite + 1) % len(v_list)])
-
-# horizontal bonds
+# Horizontal bonds
 start_sites = []
 for site in range(0, n + 1 - ny, ny):
     start_sites.append(site)
@@ -99,101 +111,67 @@ for site in start_sites:
     for col in range(0, ny - bc_modifier):
         term_list.append(z_list[site + col] * z_list[site + (col + 1) % (ny)])
         print((site + col), site + (col + 1) % (ny))
-
 # Ising model
 h_ising = Hamiltonian(pauli_string_list=term_list)
+# Define the exact diagonalization class
+ed = ED(number_of_qubits=length)
+h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
+
+# Parameters for the time evolution
+# Time for the variational unitary
 time = 0.3
+# Number of layers to optimize over
 nlayer = 3
-if nx < 4:
-    ed = ED(number_of_qubits=n)
-try:
-    h_ising_matrix = ed.get_hamiltonian_matrix(hamiltonian=h_ising)
-except:
-    pass
-if norm_mode:
-    for order in [2, 3, 4]:
-        trotter_error_list = []
-        variational_error_list = []
-        print("order ", order)
-        variational_unitary = UnconstrainedVariationalUnitary(
-            h_ising, number_of_layer=nlayer, time=time)
-        variational_unitary.set_theta_to_trotter()
-        try:
-            trotter_error = ed.get_error(
-                variational_unitary=variational_unitary, hamiltonian=h_ising)
-        except:
-            pass
-        opt = Optimizer()
-        res = opt.optimize_arbitrary(
-            variational_unitary=variational_unitary,
-            order=order,
-            unconstrained=True,
-            tol=5e-4
-        )
-        try:
-            variational_error = ed.get_error(
-                variational_unitary=variational_unitary,
-                hamiltonian=h_ising,
-            )
-            variational_error_list.append(variational_error)
-            print("trotter_error ", trotter_error)
-            print("variational_error", variational_error_list[-1])
-        except Exception as e:
-            print(e)
+# Number of steps for the exact time evolution for the benchmark
+n_steps = 10
+# Get list of single Z string as a sparse matrix
+z_list_sparse = []
+for site in range(n):
+    z_list_sparse.append(ed.get_sparse(z_list[site]))
+z_t_trotter = []
+z_t_variational = []
+energy_trotter = []
+energy_variational = []
+# Get the observable for the continuous time evolution
+state_init = np.array([1.0+0.0j]+[0.0]*(2**n-1))
+energy = state_init.T@h_ising_matrix@state_init
 
-if observable_mode:
-    # Number of steps for the time evolution
-    n_steps = 10
-    # Get list of single Z string
-    z_list_sparse = []
-    for site in range(n):
-        z_list_sparse.append(ed.get_sparse(z_list[site]))
-    # z_t_continous = []
-    z_t_trotter = []
-    z_t_variational = []
-    energy_trotter = []
-    energy_variational = []
+# Exact
+energy_continuous, z_t_continuous = get_continuous_observables(
+    state_init=state_init, hamiltonian=h_ising, time=time, obs_list=z_list_sparse, n_steps=n_steps)
 
-    # Get the observable for the continuous time evolution
-    state_init = np.array([1.0+0.0j]+[0.0]*(2**n-1))
-    energy = state_init.T@h_ising_matrix@state_init
+# Trotter
+variational_unitary = UnconstrainedVariationalUnitary(
+    h_ising, number_of_layer=nlayer, time=time)
+variational_unitary.set_theta_to_trotter()
+# Do the time evolution and get expectation values
+energy_trotter, z_t_trotter = get_observale_different_times(
+    state_init=state_init, variational_unitary=variational_unitary, hamiltonian_matrix=h_ising_matrix, obs_list=z_list_sparse, n_steps=n_steps)
+# Get the norm error
+trotter_error = ed.get_error(
+    variational_unitary=variational_unitary, hamiltonian=h_ising)
 
-    # Exact
-    energy_continuous, z_t_continuous = get_continuous_observables(
-        state_init=state_init, hamiltonian=h_ising, time=time, obs_list=z_list_sparse, n_steps=n_steps)
-
-    # Trotter
+# Variational
+energy_order: dict = {}
+z_t_order: dict = {}
+norm_error_order: dict = {}
+for order in [2, 3, 4]:
     variational_unitary = UnconstrainedVariationalUnitary(
         h_ising, number_of_layer=nlayer, time=time)
-    variational_unitary.set_theta_to_trotter()
-    # Do the time evolution and get expectation values
-    energy_trotter, z_t_trotter = get_observale_different_times(
+    opt = Optimizer()
+    res = opt.optimize_arbitrary(
+        variational_unitary=variational_unitary,
+        order=order,
+        unconstrained=True,
+        tol=5e-4
+    )
+    energy, z_t = get_observale_different_times(
         state_init=state_init, variational_unitary=variational_unitary, hamiltonian_matrix=h_ising_matrix, obs_list=z_list_sparse, n_steps=n_steps)
-    # Get the norm error
-    trotter_error = ed.get_error(
+    z_t_order[order] = z_t
+    energy_order[order] = energy
+    norm_error = ed.get_error(
         variational_unitary=variational_unitary, hamiltonian=h_ising)
-
-    # Variational
-    energy_order: dict = {}
-    z_t_order: dict = {}
-    norm_error_order: dict = {}
-    for order in [2, 3, 4]:
-        variational_unitary = UnconstrainedVariationalUnitary(
-            h_ising, number_of_layer=nlayer, time=time)
-        opt = Optimizer()
-        res = opt.optimize_arbitrary(
-            variational_unitary=variational_unitary,
-            order=order,
-            unconstrained=True,
-            tol=5e-4
-        )
-        energy, z_t = get_observale_different_times(
-            state_init=state_init, variational_unitary=variational_unitary, hamiltonian_matrix=h_ising_matrix, obs_list=z_list_sparse, n_steps=n_steps)
-        z_t_order[order] = z_t
-        energy_order[order] = energy
-        norm_error = ed.get_error(
-            variational_unitary=variational_unitary, hamiltonian=h_ising)
-        norm_error_order[order] = norm_error
+    norm_error_order[order] = norm_error
 
 # Make the plot
 plt.figure()
@@ -204,7 +182,10 @@ for order in [2, 3, 4]:
     plt.plot(np.abs(np.sum(np.array(z_t_order[order]), axis=1)-np.sum(
         np.array(z_t_continuous), axis=1)), label='order'+str(order)+" err="+str(norm_error_order[order]))
 plt.legend(loc='best')
+plt.xlabel('number of steps')
+plt.ylabel('error on the magnetisation')
 plt.show()
+plt.savefig('magnetisation.pdf')
 
 plt.figure()
 plt.title('Energy')
@@ -214,4 +195,7 @@ for order in [2, 3, 4]:
     plt.plot(np.abs(np.array(
         energy_order[order])-np.array(energy_trotter)), label="order"+str(order))
 plt.legend(loc='best')
+plt.xlabel('number of steps')
+plt.ylabel('error on the energy')
 plt.show()
+plt.savefig('energy.pdf')
