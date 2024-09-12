@@ -1,4 +1,5 @@
 """Sphinx configuration."""
+
 project = "PerOpQ"
 copyright = "2023, Quantinuum"
 author = "Quantinuum"

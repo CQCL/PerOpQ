@@ -15,6 +15,8 @@ readme = "README.md"
 python = ">=3.10,<4.0"
 numpy = "~1.26"
 scipy = "^1.11.3"
+numba = "~0.60.0"
+rich = "~13.8.1"
 
 [tool.poetry.group.tests]
 optional = true

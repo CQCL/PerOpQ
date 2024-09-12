@@ -5,9 +5,11 @@ from peropq.variational_unitary import VariationalUnitary
 
 
 class UnconstrainedVariationalUnitary(VariationalUnitary):
+    """class representing the variational unitary ansataz, with no prior constraint on the variational parameters."""
+
     def update_theta(self, new_array: npt.NDArray) -> None:
         """
-         Update theta
+         Update theta.
 
         :param new_array the new array containing the variational parameters. It's shape must be (R,  n_terms).
         """
@@ -15,7 +17,12 @@ class UnconstrainedVariationalUnitary(VariationalUnitary):
             if self.depth == 1 and new_array.shape == (1, self.n_terms):
                 pass
             else:
-                error_message = "Wrong length provided. Shape is"+str(new_array.shape)+" required is "+str((1, self.n_terms))
+                error_message = (
+                    "Wrong length provided. Shape is"
+                    + str(new_array.shape)
+                    + " required is "
+                    + str((1, self.n_terms))
+                )
                 raise ValueError(error_message)
         self.theta = new_array
 
@@ -23,15 +30,14 @@ class UnconstrainedVariationalUnitary(VariationalUnitary):
         """Returns an input theta as flatten depth*n_terms array. Useful to pass to a minimization function."""
         if self.depth > 1:
             return np.array(theta).reshape(self.depth * self.n_terms)
-        else:
-            return np.array(theta).reshape(self.n_terms)
+        return np.array(theta).reshape(self.n_terms)
 
-    def unflatten_theta(self, flat_theta:npt.NDArray) -> npt.NDArray:
+    def unflatten_theta(self, flat_theta: npt.NDArray) -> npt.NDArray:
         """Returns the flattened variational parameters as an array with shape (depth,n_terms)."""
-        return np.array(flat_theta).reshape((self.depth , self.n_terms))
+        return np.array(flat_theta).reshape((self.depth, self.n_terms))
 
     def get_flattened_theta(self) -> npt.NDArray:
-        """ Return the flatten current variational parameters"""
+        """Return the flatten current variational parameters."""
         return self.flatten_theta(self.theta)
 
     def get_initial_trotter_vector(self) -> npt.NDArray:

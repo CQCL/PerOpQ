@@ -1,22 +1,23 @@
-from peropq.ed_module import ExactDiagonalization# type: ignore[import-untyped]  
-from peropq.hamiltonian import Hamiltonian# type: ignore[import-untyped]  
-from peropq.pauli import Pauli, PauliString# type: ignore[import-untyped]  
-from peropq.variational_unitary import VariationalUnitary# type: ignore[import-untyped]  
-
 import numpy as np
+from peropq.ed_module import ExactDiagonalization  # type: ignore[import-untyped]
+from peropq.hamiltonian import Hamiltonian  # type: ignore[import-untyped]
+from peropq.pauli_bitstring import PauliString, pauli_from_string
+from peropq.variational_unitary import (
+    VariationalUnitary,  # type: ignore[import-untyped]
+)
 
 
-def test_ed_module() ->None:
+def test_ed_module() -> None:
     z_list: list[PauliString] = []
     x_list: list[PauliString] = []
     y_list: list[PauliString] = []
     n = 4
     for i in range(n):
-        zi = PauliString.from_pauli_sequence(paulis=[Pauli.Z], start_qubit=i)
+        zi = pauli_from_string(string="Z", length=n, start_qubit=i)
         z_list.append(zi)
-        xi = PauliString.from_pauli_sequence(paulis=[Pauli.X], start_qubit=i)
+        xi = pauli_from_string(string="X", length=n, start_qubit=i)
         x_list.append(xi)
-        yi = PauliString.from_pauli_sequence(paulis=[Pauli.Y], start_qubit=i)
+        yi = pauli_from_string(string="Y", length=n, start_qubit=i)
         y_list.append(yi)
     # Ising model
     term_list = []
@@ -28,6 +29,4 @@ def test_ed_module() ->None:
     variational_unitary = VariationalUnitary(h_ising, number_of_layer=3, time=1.0)
     variational_unitary.set_theta_to_trotter()
     ed = ExactDiagonalization(number_of_qubits=4)
-    assert np.isclose(ed.get_error(variational_unitary,h_ising),1.2703740757929238)
-
-    
+    assert np.isclose(ed.get_error(variational_unitary, h_ising), 1.2703740757929238)

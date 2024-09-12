@@ -4,13 +4,10 @@ import numpy as np
 import numpy.typing as npt
 import scipy  # type: ignore[import-untyped]
 
-from peropq.ansatz_bch import AnsatzVariationalNorm
-# from peropq.bch import VariationalNorm
 from peropq.bch_optimized import VariationalNorm
-from peropq.hamiltonian import Hamiltonian
+from peropq.exact_norm import ExactUnitary
 from peropq.unconstrained_variational_unitary import UnconstrainedVariationalUnitary
 from peropq.variational_unitary import VariationalUnitary
-from peropq.exact_norm import ExactUnitary
 
 
 class Optimizer:
@@ -41,16 +38,21 @@ class Optimizer:
             theta=optimized_results.x,
         )
 
+    # ruff: noqa: PLR0913
     def optimize_arbitrary(
         self,
         variational_unitary: UnconstrainedVariationalUnitary,
         order: float,
         initial_guess: Sequence[float] = [],
         tol: float = 0,
-        unconstrained=False,
-        cache = False,
-        init_variational_norm:VariationalNorm|None = None,
-    ) -> scipy.optimize.OptimizeResult|tuple[scipy.optimize.OptimizeResult,VariationalNorm]:
+        *,
+        unconstrained: bool = False,
+        cache: bool = False,
+        init_variational_norm: VariationalNorm | None = None,
+    ) -> (
+        scipy.optimize.OptimizeResult
+        | tuple[scipy.optimize.OptimizeResult, VariationalNorm]
+    ):
         """
         Perform the minimization.
 
@@ -64,7 +66,7 @@ class Optimizer:
         else:
             x0 = variational_unitary.get_initial_trotter_vector()
             x0 = variational_unitary.flatten_theta(x0)
-        if init_variational_norm == None:
+        if init_variational_norm is None:
             variational_norm = VariationalNorm(
                 variational_unitary,
                 order=order,
@@ -88,9 +90,11 @@ class Optimizer:
                 tol=tol,
             )
         # Set the theta of the variational_norm to the optimized result
-        variational_unitary.theta = variational_unitary.unflatten_theta(optimized_results.x)
+        variational_unitary.theta = variational_unitary.unflatten_theta(
+            optimized_results.x,
+        )
         if cache:
-            return optimized_results,variational_norm
+            return optimized_results, variational_norm
         return optimized_results
 
     def optimize_exact(
@@ -98,14 +102,12 @@ class Optimizer:
         exact_unitary: ExactUnitary,
         initial_guess: Sequence[float] = [],
         tol: float = 0,
-    ):
-        """Optimize an instance of ExactUnitary"""
+    ) -> scipy.optimize.OptimizeResult:
+        """Optimize an instance of ExactUnitary."""
         if len(initial_guess) != 0:
             x0: npt.NDArray = np.array(initial_guess)
         else:
             x0 = exact_unitary.get_initial_trotter_vector()
             x0 = exact_unitary.flatten_theta(x0)
-        
-        return scipy.optimize.minimize(exact_unitary.get_exact_norm, x0,tol=tol)
-        
 
+        return scipy.optimize.minimize(exact_unitary.get_exact_norm, x0, tol=tol)

@@ -9,7 +9,6 @@ from scipy.sparse import csr_array  # type: ignore[import-untyped]
 
 from peropq.commutators import get_commutator_pauli_tensors
 from peropq.hamiltonian import Hamiltonian
-# from peropq.pauli import PauliString
 from peropq.pauli_bitstring import PauliString
 
 
@@ -66,7 +65,7 @@ class VariationalUnitary:
             theta_trotter: npt.NDArray = np.zeros((self.depth - 1, self.n_terms))
             for j in range(self.n_terms):
                 for r in range(self.depth - 1):
-                    theta_trotter[r, j] = self.cjs[j] * self.time / self.depth
+                    theta_trotter[r, j] = np.real(self.cjs[j]) * self.time / self.depth
         else:
             theta_trotter: npt.NDArray = np.zeros((self.depth, self.n_terms))
             for j in range(self.n_terms):
@@ -77,8 +76,13 @@ class VariationalUnitary:
         """Returns the variational parameters as flatten (R-1)*n_terms array. Useful to pass to a minimization function."""
         if self.depth > 1:
             return np.array(theta).reshape((self.depth - 1) * self.n_terms)
-        else:
-            return np.array(theta).reshape(self.n_terms)
+        return np.array(theta).reshape(self.n_terms)
+
+    def unflatten_theta(self, flat_theta: npt.NDArray) -> npt.NDArray:
+        """Returns the flattened variational parameters as an array with shape (depth,n_terms)."""
+        if self.depth > 1:
+            return np.array(flat_theta).reshape((self.depth - 1, self.n_terms))
+        return np.array(flat_theta).reshape((1, self.n_terms))
 
     def set_theta_to_trotter(self) -> None:
         """Sets the variational parameters to the Trotter parameters."""
@@ -164,22 +168,8 @@ class VariationalUnitary:
         """
         if not self.trace_calculated:
             self.calculate_traces()
-        if np.array(theta).shape[0] > self.n_terms:
-            theta_new = np.array(theta).reshape(
-                (
-                    self.depth - 1,
-                    self.n_terms,
-                ),
-            )
-            self.update_theta(theta_new)
-        if np.array(theta).shape[0] == self.n_terms:
-            theta_new = np.array(theta).reshape(
-                (
-                    1,
-                    self.n_terms,
-                ),
-            )
-            self.update_theta(theta_new)
+        theta_new = self.unflatten_theta(theta)
+        self.update_theta(theta_new)
         chi_tensor = self.chi_tensor(
             self.left_indices,
             self.right_indices,
@@ -190,230 +180,3 @@ class VariationalUnitary:
             self.trace_tensor.reshape((s1 * s2, s3 * s4)),
         )
         return np.real(-chi_tensor.T @ trace_tensor @ chi_tensor)
-
-    def c2_squared_test(self, theta: npt.ArrayLike = ()) -> float:
-        def product_dagger(string1,string2):
-            if string1!=0 and string2!=0:
-                import copy
-                string_dag = copy.deepcopy(string2)
-                string_dag.coefficient = np.conjugate(string_dag.coefficient)
-                return string1*string_dag
-            else:
-                return 0
-        self.update_theta(theta)
-        full_term_list = []
-        full_term_list_without_theta = []
-        for layer in range(self.depth):
-            for iterm in range(self.n_terms):
-                full_term_list_without_theta.append(self.cjs[iterm]*self.pauli_string_list[iterm])
-                full_term_list.append(
-                    -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm],
-                )
-
-        number_of_terms = len(full_term_list)
-        commutator_list = []
-        for j in range(number_of_terms):
-            for i in range(j, number_of_terms):
-                commutator_list.append(
-                    0.5
-                    * get_commutator_pauli_tensors(
-                        full_term_list[i],
-                        full_term_list[j],
-                    ),
-                )
-        trace_sum = 0
-        trace_list = []
-        # First order
-        # for j in range(number_of_terms):
-        #     commutator_list.append(1j*full_term_list_without_theta[j])
-        #     indices_list.append((theta_index_list[j]))
-        for commutator_i in commutator_list:
-            for commutator_j in commutator_list:
-                # product_commutator: PauliString = commutator_i * commutator_j
-                product_commutator: PauliString = product_dagger(commutator_i,commutator_j)
-                if product_commutator != 0.0:
-                    trace_sum += product_commutator.normalized_trace()
-        return trace_sum
-
-    def c2_square_gradient_test(self, theta: npt.ArrayLike = ()) -> npt.ArrayLike:
-        self.update_theta(theta)
-        full_term_list = []
-        tuple_list = []
-        for layer in range(self.depth):
-            for iterm in range(self.n_terms):
-                full_term_list.append(
-                    -1j * self.pauli_string_list[iterm],
-                )
-                tuple_list.append((layer, iterm))
-
-        number_of_terms = len(full_term_list)
-        commutator_list = []
-        indices_list = []
-        for j in range(number_of_terms):
-            for i in range(j, number_of_terms):
-                commutator_list.append(
-                    0.5
-                    * get_commutator_pauli_tensors(
-                        full_term_list[i],
-                        full_term_list[j],
-                    ),
-                )
-                indices_list.append((i, j))
-        grad = np.zeros((number_of_terms,))
-        for i_derivative in range(number_of_terms):
-            for i, commutator_i in enumerate(commutator_list):
-                for j, commutator_j in enumerate(commutator_list):
-                    full_theta_coeff = (
-                        self.theta[tuple_list[indices_list[i][0]]]
-                        * self.theta[tuple_list[indices_list[i][1]]]
-                        * self.theta[tuple_list[indices_list[j][0]]]
-                        * self.theta[tuple_list[indices_list[j][1]]]
-                    )
-                    product_commutator = commutator_i * commutator_j
-                    theta_coeff = 0.0
-                    if i_derivative == indices_list[i][0]:
-                        coeff = (
-                            full_theta_coeff
-                            / self.theta[tuple_list[indices_list[i][0]]]
-                        )
-                        if product_commutator != 0.0:
-                            grad[i_derivative] -= (
-                                product_commutator.normalized_trace() * coeff
-                            )
-                    if i_derivative == indices_list[i][1]:
-                        coeff = (
-                            full_theta_coeff
-                            / self.theta[tuple_list[indices_list[i][1]]]
-                        )
-                        if product_commutator != 0.0:
-                            grad[i_derivative] -= (
-                                product_commutator.normalized_trace() * coeff
-                            )
-                    if i_derivative == indices_list[j][0]:
-                        coeff = (
-                            full_theta_coeff
-                            / self.theta[tuple_list[indices_list[j][0]]]
-                        )
-                        if product_commutator != 0.0:
-                            grad[i_derivative] -= (
-                                product_commutator.normalized_trace() * coeff
-                            )
-                    if i_derivative == indices_list[j][1]:
-                        coeff = (
-                            full_theta_coeff
-                            / self.theta[tuple_list[indices_list[j][1]]]
-                        )
-                        if product_commutator != 0.0:
-                            grad[i_derivative] -= (
-                                product_commutator.normalized_trace() * coeff
-                            )
-                    # print('grad ',grad[i_derivative])
-        return grad
-
-    def c3_squared_test(self, theta: npt.ArrayLike = ()) -> float:
-        def product_dagger(string1,string2):
-            if string1!=0 and string2!=0:
-                import copy
-                string_dag = copy.deepcopy(string2)
-                string_dag.coefficient = np.conjugate(string_dag.coefficient)
-                return string1*string_dag
-            else:
-                return 0
-        self.update_theta(theta)
-        full_term_list = []
-        full_term_list_without_theta = []
-        theta_index_list = []
-        for layer in range(self.depth):
-            for iterm in range(self.n_terms):
-                full_term_list.append(
-                    -1j * self.theta[layer, iterm] * self.pauli_string_list[iterm],
-                )
-                full_term_list_without_theta.append(self.cjs[iterm]*self.pauli_string_list[iterm])
-                theta_index_list.append((layer, iterm))
-        number_of_terms = len(full_term_list)
-        commutator_list = []
-        indices_list = []
-        # First order
-        # for j in range(number_of_terms):
-        #     commutator_list.append(1j*full_term_list_without_theta[j])
-        #     indices_list.append((theta_index_list[j]))
-        # Second order
-        for j in range(number_of_terms):
-            for i in range(j, number_of_terms):
-                commutator_list.append(
-                    0.5
-                    * get_commutator_pauli_tensors(
-                        full_term_list[i],
-                        full_term_list[j],
-                    ),
-                )
-                indices_list.append((theta_index_list[i], theta_index_list[j]))
-        # Third order
-        # First term
-        for j in range(number_of_terms):
-            for k in range(number_of_terms):
-                if j != k:
-                    com = get_commutator_pauli_tensors(
-                        full_term_list[j],
-                        full_term_list[k],
-                    )
-                    if com != 0.0:
-                        com_com = get_commutator_pauli_tensors(full_term_list[j], com)
-                        commutator_list.append(1.0 / 12.0 * com_com)
-                        indices_list.append(
-                            (
-                                theta_index_list[j],
-                                theta_index_list[j],
-                                theta_index_list[k],
-                            ),
-                        )
-        # Second term
-        for l in range(number_of_terms):
-            for k in range(l + 1, number_of_terms):
-                for j in range(k + 1, number_of_terms):
-                    com_kl = get_commutator_pauli_tensors(
-                        full_term_list[k],
-                        full_term_list[l],
-                    )
-                    if com_kl != 0.0:
-                        com_jkl = get_commutator_pauli_tensors(
-                            full_term_list[j],
-                            com_kl,
-                        )
-                        commutator_list.append(1.0 / 6.0 * com_jkl)
-                        indices_list.append(
-                            (
-                                theta_index_list[j],
-                                theta_index_list[k],
-                                theta_index_list[l],
-                            ),
-                        )
-                    com_kj = get_commutator_pauli_tensors(
-                        full_term_list[k],
-                        full_term_list[j],
-                    )
-                    if com_kj != 0.0:
-                        com_lkj = get_commutator_pauli_tensors(
-                            full_term_list[l],
-                            com_kj,
-                        )
-                        commutator_list.append(1.0 / 6.0 * com_lkj)
-                        indices_list.append(
-                            (
-                                theta_index_list[l],
-                                theta_index_list[k],
-                                theta_index_list[j],
-                            ),
-                        )
-
-        # Calculate traces:
-        trace_sum = 0.0
-        for i, commutator_i in enumerate(commutator_list):
-            for commutator_j in commutator_list:
-                product_commutator: PauliString = commutator_i * commutator_j
-                # product_commutator: PauliString = product_dagger(commutator_i,commutator_j)
-                # print("product commutator ",product_commutator)
-                if product_commutator != 0.0:
-                    trace_sum -= product_commutator.normalized_trace()
-
-        return trace_sum

@@ -25,13 +25,13 @@ class ExactDiagonalization:
         param: pauli to be converted.
         """
         match pauli:
-            case 'I':
+            case "I":
                 return sp.csc_matrix([[1.0, 0], [0, 1.0]], dtype=complex)
-            case 'X':
+            case "X":
                 return sp.csc_matrix([[0, 1.0], [1.0, 0]], dtype=complex)
-            case 'Y':
+            case "Y":
                 return sp.csc_matrix([[0, -1j], [1j, 0]], dtype=complex)
-            case 'Z':
+            case "Z":
                 return sp.csc_matrix([[1.0, 0.0], [0.0, -1.0]], dtype=complex)
 
     def get_sparse(self, pauli_string: PauliString) -> sp.spmatrix:
@@ -50,12 +50,14 @@ class ExactDiagonalization:
             )
         return sp.csc_matrix(sparse_string)
 
-    def get_hamiltonian_matrix(self, hamiltonian: Hamiltonian):
+    def get_hamiltonian_matrix(self, hamiltonian: Hamiltonian) -> sp.spmatrix:
         """param: hamiltonian to be converted to sparse."""
-        hamiltonian_matrix = self.get_sparse(hamiltonian.cjs[0]*hamiltonian.pauli_string_list[0])
+        hamiltonian_matrix = self.get_sparse(
+            hamiltonian.cjs[0] * hamiltonian.pauli_string_list[0],
+        )
         for i_string in range(1, len(hamiltonian.pauli_string_list)):
             hamiltonian_matrix += self.get_sparse(
-                hamiltonian.cjs[i_string]*hamiltonian.pauli_string_list[i_string],
+                hamiltonian.cjs[i_string] * hamiltonian.pauli_string_list[i_string],
             )
         return hamiltonian_matrix
 
@@ -93,7 +95,10 @@ class ExactDiagonalization:
         return u_sparse
 
     def apply_continuous_to_state(
-        self, hamiltonian: Hamiltonian, time: float, state: npt.NDArray
+        self,
+        hamiltonian: Hamiltonian,
+        time: float,
+        state: npt.NDArray,
     ) -> npt.NDArray:
         """
         Apply the continuous time evolution.
@@ -103,13 +108,15 @@ class ExactDiagonalization:
         param: state to be evolved.
         """
         hamiltonian_matrix = self.get_hamiltonian_matrix(hamiltonian)
-        new_state = scipy.sparse.linalg.expm_multiply(
-            -1j * time * hamiltonian_matrix, state
+        return scipy.sparse.linalg.expm_multiply(
+            -1j * time * hamiltonian_matrix,
+            state,
         )
-        return new_state
 
     def apply_variational_to_state(
-        self, variational_unitary: VariationalUnitary, state: npt.NDArray
+        self,
+        variational_unitary: VariationalUnitary,
+        state: npt.NDArray,
     ) -> npt.NDArray:
         """
         Apply the variational unitary to a state.
@@ -118,8 +125,7 @@ class ExactDiagonalization:
         param: state on which the unitary is applied
         """
         unitary = self.get_variational_evolution(variational_unitary)
-        new_state = unitary @ state
-        return new_state
+        return unitary @ state
 
     def get_error(
         self,
