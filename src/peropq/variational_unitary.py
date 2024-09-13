@@ -31,7 +31,7 @@ class VariationalUnitary:
         self.n_terms: int = hamiltonian.get_n_terms()
         self.pauli_string_list: Sequence[PauliString] = hamiltonian.pauli_string_list
         self.depth: int = number_of_layer
-        self.theta: npt.NDArray = np.zeros((number_of_layer, self.n_terms))
+        self.theta: npt.NDArray = 1j * np.zeros((number_of_layer, self.n_terms))
         self.cjs: Sequence[complex] = hamiltonian.get_cjs()
         self.time: float = time
         self.test: npt.NDArray = np.zeros((number_of_layer, number_of_layer))
