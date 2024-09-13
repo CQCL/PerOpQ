@@ -55,7 +55,7 @@ class VariationalUnitary:
         for j in range(self.n_terms):
             for r in range(self.depth - 1):
                 self.theta[r, j] = new_array[r, j]
-            self.theta[self.depth - 1, j] = self.time * np.real(self.cjs[j])
+            self.theta[self.depth - 1, j] = self.time * self.cjs[j]
             for r in range(self.depth - 1):
                 self.theta[self.depth - 1, j] -= new_array[r, j]
 
@@ -66,11 +66,11 @@ class VariationalUnitary:
             theta_trotter = np.zeros((self.depth - 1, self.n_terms))
             for j in range(self.n_terms):
                 for r in range(self.depth - 1):
-                    theta_trotter[r, j] = np.real(self.cjs[j]) * self.time / self.depth
+                    theta_trotter[r, j] = self.cjs[j] * self.time / self.depth
         else:
             theta_trotter = np.zeros((self.depth, self.n_terms))
             for j in range(self.n_terms):
-                theta_trotter[0, j] = np.real(self.cjs[j]) * self.time
+                theta_trotter[0, j] = self.cjs[j] * self.time
         return theta_trotter
 
     def flatten_theta(self, theta: npt.NDArray) -> npt.NDArray:
