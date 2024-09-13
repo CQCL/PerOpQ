@@ -106,19 +106,15 @@ def pauli_from_string(
         msg = "the Pauli string is too long for the provided length"
         raise (ValueError(msg))
     bit_string: npt.NDArray = np.zeros(2 * length, dtype=int)
-    non_identity_indices: list = []
     for i, character in enumerate(string):
         k = start_qubit + i
         if character == "X":
             bit_string[2 * k] = 1
-            non_identity_indices.append(k)
         elif character == "Y":
             bit_string[2 * k] = 1
             bit_string[2 * k + 1] = 1
-            non_identity_indices.append(k)
         elif character == "Z":
             bit_string[2 * k + 1] = 1
-            non_identity_indices.append(k)
         elif character == "I":
             pass
         else:
@@ -127,7 +123,6 @@ def pauli_from_string(
     return PauliString(
         bit_string=bit_string,
         coefficient=coefficient,
-        non_identity_indices=np.array(non_identity_indices),
     )
 
 

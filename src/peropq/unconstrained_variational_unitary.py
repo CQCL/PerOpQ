@@ -42,13 +42,14 @@ class UnconstrainedVariationalUnitary(VariationalUnitary):
 
     def get_initial_trotter_vector(self) -> npt.NDArray:
         """Get the variational parameters corresponding to the Trotterization. Useful to initialize the optimization."""
+        theta_trotter: npt.NDArray
         if self.depth > 1:
-            theta_trotter: npt.NDArray = np.zeros((self.depth, self.n_terms))
+            theta_trotter = np.zeros((self.depth, self.n_terms))
             for j in range(self.n_terms):
                 for r in range(self.depth):
                     theta_trotter[r, j] = np.real(self.cjs[j]) * self.time / self.depth
         else:
-            theta_trotter: npt.NDArray = np.zeros((self.depth, self.n_terms))
+            theta_trotter = np.zeros((self.depth, self.n_terms))
             for j in range(self.n_terms):
                 theta_trotter[0, j] = np.real(self.cjs[j]) * self.time
         return theta_trotter

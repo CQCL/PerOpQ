@@ -9,6 +9,8 @@ from peropq.exact_norm import ExactUnitary
 from peropq.unconstrained_variational_unitary import UnconstrainedVariationalUnitary
 from peropq.variational_unitary import VariationalUnitary
 
+EMPTY_ARRAY = np.array([])
+
 
 class Optimizer:
     """Class performing the optimizer."""
@@ -42,7 +44,7 @@ class Optimizer:
     def optimize_arbitrary(
         self,
         variational_unitary: UnconstrainedVariationalUnitary,
-        order: float,
+        order: int,
         initial_guess: Sequence[float] = [],
         tol: float = 0,
         *,
@@ -100,7 +102,7 @@ class Optimizer:
     def optimize_exact(
         self,
         exact_unitary: ExactUnitary,
-        initial_guess: Sequence[float] = [],
+        initial_guess: npt.NDArray = EMPTY_ARRAY,
         tol: float = 0,
     ) -> scipy.optimize.OptimizeResult:
         """Optimize an instance of ExactUnitary."""

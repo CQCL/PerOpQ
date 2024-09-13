@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.sparse import csr_array  # type: ignore[import-untyped]
 
-from peropq.commutators import get_commutator_pauli_tensors
+from peropq.commutators_bitstrings import get_commutator_pauli_tensors
 from peropq.hamiltonian import Hamiltonian
 from peropq.pauli_bitstring import PauliString
 
@@ -61,13 +61,14 @@ class VariationalUnitary:
 
     def get_initial_trotter_vector(self) -> npt.NDArray:
         """Get the variational parameters corresponding to the Trotterization. Useful to initialize the optimization."""
+        theta_trotter: npt.NDArray
         if self.depth > 1:
-            theta_trotter: npt.NDArray = np.zeros((self.depth - 1, self.n_terms))
+            theta_trotter = np.zeros((self.depth - 1, self.n_terms))
             for j in range(self.n_terms):
                 for r in range(self.depth - 1):
                     theta_trotter[r, j] = np.real(self.cjs[j]) * self.time / self.depth
         else:
-            theta_trotter: npt.NDArray = np.zeros((self.depth, self.n_terms))
+            theta_trotter = np.zeros((self.depth, self.n_terms))
             for j in range(self.n_terms):
                 theta_trotter[0, j] = np.real(self.cjs[j]) * self.time
         return theta_trotter
@@ -168,7 +169,7 @@ class VariationalUnitary:
         """
         if not self.trace_calculated:
             self.calculate_traces()
-        theta_new = self.unflatten_theta(theta)
+        theta_new = self.unflatten_theta(np.array(theta))
         self.update_theta(theta_new)
         chi_tensor = self.chi_tensor(
             self.left_indices,

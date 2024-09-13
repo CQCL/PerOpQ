@@ -1,11 +1,12 @@
 from dataclasses import dataclass
+from typing import Literal, TypeGuard
 
 import numpy as np
 import rich
 from numba import jit, njit
 from numpy import typing as npt
 
-from peropq import commutators
+from peropq import commutators_bitstrings
 from peropq.pauli_bitstring import PauliString
 from peropq.unconstrained_variational_unitary import (
     UnconstrainedVariationalUnitary as VariationalUnitary,
@@ -35,15 +36,15 @@ def _get_non_zero_trace_indices(bitstrings: npt.NDArray) -> npt.NDArray:
 @jit(nopython=True)
 # ruff: noqa: PLR0913
 def _loop_over_trace(
-    trace_list: npt.NDArray[float],
-    indices: npt.NDArray[int],
-    theta: npt.NDArray[int],
+    trace_list: npt.NDArray,
+    indices: npt.NDArray,
+    theta: npt.NDArray,
     min_order: int,
-    all_the_orders: npt.NDArray[int],
-    all_the_indices: npt.NDArray[int],
-    begin_list: npt.NDArray[int],
-    end_list: npt.NDArray[int],
-    all_the_coefficients: npt.NDArray[float],
+    all_the_orders: npt.NDArray,
+    all_the_indices: npt.NDArray,
+    begin_list: npt.NDArray,
+    end_list: npt.NDArray,
+    all_the_coefficients: npt.NDArray,
 ) -> float:
     """
     Just in timed compiled function which computes the norm once all the traces are calculated.
@@ -106,27 +107,31 @@ class NormTerm:
     coefficient: complex
     theta_indices: list[tuple[int, int]]
 
-    def _pretty_print(self) -> None:
-        """Useful function for testing."""
-        pauli_print_string = ""
-        pauli_print_string += str(self.pauli_string.coefficient)
-        pauli_print_string += "*"
-        for akey in self.pauli_string.qubit_pauli_map:
-            pauli_print_string += str(self.pauli_string.qubit_pauli_map[akey])
-            pauli_print_string += str(akey) + " "
-        rich.print(self.coefficient, "*", pauli_print_string, self.theta_indices)
+
+def _is_pauli_string(to_test: PauliString | Literal[0]) -> TypeGuard[PauliString]:
+    if to_test:
+        return True
+    return False
 
 
-def commutator(aterm: NormTerm, other: NormTerm) -> NormTerm:
+def _is_norm_term(to_test: NormTerm | Literal[0]) -> TypeGuard[NormTerm]:
+    if to_test:
+        return True
+    return False
+
+
+def commutator(aterm: NormTerm, other: NormTerm) -> NormTerm | Literal[0]:
     """Take the commutator between two NormTerm instances."""
-    commutator_string = commutators.get_commutator_pauli_tensors(
+    commutator_string = commutators_bitstrings.get_commutator_pauli_tensors(
         aterm.pauli_string,
         other.pauli_string,
     )
-    order: int = aterm.order + other.order
-    coefficient: float = aterm.coefficient * other.coefficient
-    theta_indices: list[tuple[int, int]] = aterm.theta_indices + other.theta_indices
-    return NormTerm(commutator_string, order, coefficient, theta_indices)
+    if _is_pauli_string(commutator_string):
+        order: int = aterm.order + other.order
+        coefficient: complex = aterm.coefficient * other.coefficient
+        theta_indices: list[tuple[int, int]] = aterm.theta_indices + other.theta_indices
+        return NormTerm(commutator_string, order, coefficient, theta_indices)
+    return 0
 
 
 class VariationalNorm:
@@ -147,9 +152,8 @@ class VariationalNorm:
         :param unconstrained Whether the zero and first order are constrained to cancel each other
         """
         self.variational_unitary = variational_unitary
-        self.term_norm = []
         self.order = order
-        self.terms: dict[list[NormTerm]] = {}  # indices:(order,term_index)
+        self.terms: dict[int, list[NormTerm]] = {}  # indices:(order,term_index)
         for order_index in range(order):
             self.terms[order_index] = []
         self.unconstrained = unconstrained
@@ -168,8 +172,8 @@ class VariationalNorm:
         result_list: list[NormTerm] = []
         for term1 in term_list1:
             for term2 in term_list2:
-                com_term: NormTerm = commutator(term1, term2)
-                if com_term.pauli_string:
+                com_term = commutator(term1, term2)
+                if _is_norm_term(com_term):
                     result_list.append(com_term)
         return result_list
 
@@ -316,11 +320,11 @@ class VariationalNorm:
         self.all_the_terms: list[NormTerm] = []
         self.all_the_order: list[int] = []
         self.all_the_theta_indices: list = []
-        all_the_indices = []
+        all_the_indices: list[tuple[int, int]] = []
         self.begin_list = []
         self.end_list = []
-        self.all_the_coefficients: list[float] = []
-        all_the_bitstring_list: list[npt.NDarray] = []
+        self.all_the_coefficients: list[complex] = []
+        all_the_bitstring_list: list[npt.NDArray] = []
         for order_index in range(self.order):
             for a_term in self.terms[order_index]:
                 self.all_the_terms.append(a_term)
@@ -345,7 +349,7 @@ class VariationalNorm:
         rich.print("Calculated traces")
         self.calculated_trace = True
 
-    def calculate_norm(self, theta: npt.NDArray[float]) -> float:
+    def calculate_norm(self, theta: npt.NDArray) -> float:
         """Calculate the norm for a given variational parameter theta."""
         if np.array(theta).shape[0] > self.variational_unitary.n_terms:
             # TODO: Get rid of the try expect
@@ -372,11 +376,8 @@ class VariationalNorm:
                 ),
             )
             self.variational_unitary.update_theta(theta_new)
-        s_norm: float = 0
-        if self.unconstrained:
-            min_order: int = 0
-        else:
-            min_order: int = 1
+        s_norm: float = 0.0
+        min_order = 0 if self.unconstrained else 1
         s_norm = _loop_over_trace(
             np.array(self.trace_list),
             np.array(self.indices),
