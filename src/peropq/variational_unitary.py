@@ -25,8 +25,8 @@ class VariationalUnitary:
         Init function.
 
         :param hamiltonian Hamiltonian of which one is interested in the dynamics.
-        :param R number of steps for the optimization.
-        :param t final time to up to which one wants to perform the time evolution.
+        :param number_of_layer number of steps for the optimization.
+        :param time final time to up to which one wants to perform the time evolution.
         """
         self.n_terms: int = hamiltonian.get_n_terms()
         self.pauli_string_list: Sequence[PauliString] = hamiltonian.pauli_string_list
