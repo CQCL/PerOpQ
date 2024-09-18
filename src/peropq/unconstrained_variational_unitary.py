@@ -11,7 +11,7 @@ class UnconstrainedVariationalUnitary(VariationalUnitary):
         """
          Update theta.
 
-        :param new_array the new array containing the variational parameters. It's shape must be (R,  n_terms).
+        :param new_array: the new array containing the variational parameters. It's shape must be (R,  n_terms).
         """
         if new_array.shape != (self.depth, self.n_terms):
             if self.depth == 1 and new_array.shape == (1, self.n_terms):

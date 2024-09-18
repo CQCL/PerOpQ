@@ -20,9 +20,9 @@ class PauliString:
         """
         Initialisation.
 
-        param: bit_string array representing the Pauli matrix
-        param: coefficient complex number by which the Pauli string is multiplied
-        param: non_identity_indices array containing the indices which are not identity
+        :param bit_string: array representing the Pauli matrix
+        :param coefficient: complex number by which the Pauli string is multiplied
+        :param non_identity_indices: array containing the indices which are not identity
         """
         self.bit_string = bit_string
         self.coefficient = coefficient
@@ -56,7 +56,7 @@ class PauliString:
     def commutes_with(self, other: PauliString) -> bool:
         """Return whether this PauliString commutes with given PauliString.
 
-        :param other The right side of the Commutator
+        :param other: The right side of the Commutator
 
         :return: True if PauliStrings commute, False otherwise
         """
@@ -97,10 +97,10 @@ def pauli_from_string(
     """
     Get an instance of PauliString from a string.
 
-    param: string represents the pauli string
-    param: length legnth of the Pauli string (i.e. number of qubits)
-    param: start_qubit first qubit to place the Pauli on
-    param: coefficent of the Pauli string
+    :param string: represents the pauli string
+    :param length: legnth of the Pauli string (i.e. number of qubits)
+    :param start_qubit: first qubit to place the Pauli on
+    :param coefficent: of the Pauli string
     """
     if not start_qubit + len(string) <= length:
         msg = "the Pauli string is too long for the provided length"
@@ -177,8 +177,8 @@ def bit_string_commutation(bit_string1: npt.NDArray, bit_string2: npt.NDArray) -
     """
     Return whether two bitstrings representing pauli strings commute.
 
-    param: bit_string1 first bit_string
-    param: bit_string2 second bit_string
+    :param bit_string1: first bit_string
+    :param bit_string2: second bit_string
     """
     number_anti_commute: int = 0
     if len(bit_string1) != len(bit_string2):

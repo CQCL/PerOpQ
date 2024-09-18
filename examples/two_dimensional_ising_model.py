@@ -8,6 +8,13 @@ from peropq.optimizer import Optimizer
 from peropq.pauli_bitstring import PauliString, pauli_from_string
 from peropq.unconstrained_variational_unitary import UnconstrainedVariationalUnitary
 
+r"""
+This scipt demonstrates how to use PerOpQ to optimize the time-evolution circuit for the two dimensional Ising model:
+`$\sum_{<i,j>} Z_i Z_j +\sum_i X_i$`.
+The optimization is performed at orders 2,3 and 4.
+Then, the results of the optimized circuits are compared to the Trotterize time evolution and to the continuous time evolution.
+"""
+
 
 def expectation_value(
     state: npt.NDArray,
@@ -16,8 +23,9 @@ def expectation_value(
     """
     Get the expectation value.
 
-    :param state wave-function on which the observables need to be measured
-    :param obs_list list of observables
+    :param state: wave-function on which the observables need to be measured
+    :param obs_list: list of observables
+    :return: list of expectation value
     """
     expectation_value_list: list[complex] = []
     for obs in obs_list:
@@ -77,10 +85,13 @@ def get_continuous_observables(
 z_list: list[PauliString] = []
 x_list: list[PauliString] = []
 y_list: list[PauliString] = []
-bc_modifier = 1
+# The following line ensures open boundary conditions:
+bc_modifier = 1  # Change to 0 for periodic.
+# Geometry nx x ny square lattice
 nx = 3
-ny = 3
+ny = 2
 length = nx * ny
+# Construct the needed Pauli strings
 for i in range(length):
     zi = pauli_from_string(string="Z", length=length, start_qubit=i)
     xi = pauli_from_string(string="X", length=length, start_qubit=i)
@@ -88,11 +99,12 @@ for i in range(length):
     z_list.append(zi)
     x_list.append(xi)
     y_list.append(yi)
+
+# Define the Hamiltonian by storing all the terms in term_list
 term_list = []
 for i in range(length):
     term_list.append(1.0 * z_list[i])
     term_list.append(1.0 * x_list[i])
-# Define the Hamiltonian
 V = -1
 # Vertical bonds
 for col in range(nx):
@@ -110,6 +122,7 @@ for site in range(0, length + 1 - ny, ny):
 for site in start_sites:
     for col in range(ny - bc_modifier):
         term_list.append(z_list[site + col] * z_list[site + (col + 1) % (ny)])
+
 # Ising model
 h_ising = Hamiltonian(pauli_string_list=term_list)
 # Define the exact diagonalization class
@@ -144,12 +157,13 @@ energy_continuous, z_t_continuous = get_continuous_observables(
     n_steps=n_steps,
 )
 
-# Trotter
+# Trotter circuit
 variational_unitary = UnconstrainedVariationalUnitary(
     h_ising,
     number_of_layer=nlayer,
     time=time,
 )
+# Set the parameter to Trotter (no optimization here).
 variational_unitary.set_theta_to_trotter()
 # Do the time evolution and get expectation values
 energy_trotter, z_t_trotter = get_observale_different_times(
@@ -165,23 +179,28 @@ trotter_error = ed.get_error(
     hamiltonian=h_ising,
 )
 
-# Variational
+# Optimization of the variational circuit
 energy_order: dict = {}
 z_t_order: dict = {}
 norm_error_order: dict = {}
-for order in [2, 3, 4]:
+order_list = [2, 3, 4]
+for order in order_list:
+    # Define the ansatz
     variational_unitary = UnconstrainedVariationalUnitary(
         h_ising,
         number_of_layer=nlayer,
         time=time,
     )
+    # Define the optimizer
     opt = Optimizer()
+    # Run the optimization
     res = opt.optimize_arbitrary(
         variational_unitary=variational_unitary,
         order=order,
         unconstrained=True,
         tol=5e-4,
     )
+    # Obtain observables to compare with Trotter and continuous time evolution
     energy, z_t = get_observale_different_times(
         state_init=state_init,
         variational_unitary=variational_unitary,
@@ -207,7 +226,7 @@ plt.plot(
     ),
     label="trotter" + " err=" + str(trotter_error),
 )
-for order in [2, 3, 4]:
+for order in order_list:
     plt.plot(
         np.abs(
             np.sum(np.array(z_t_order[order]), axis=1)
@@ -227,7 +246,7 @@ plt.plot(
     np.abs(np.array(energy_continuous) - np.array(energy_trotter)),
     label="trotter",
 )
-for order in [2, 3, 4]:
+for order in order_list:
     plt.plot(
         np.abs(np.array(energy_order[order]) - np.array(energy_trotter)),
         label="order" + str(order),

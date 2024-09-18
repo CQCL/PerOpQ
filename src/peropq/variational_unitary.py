@@ -13,7 +13,7 @@ from peropq.pauli_bitstring import PauliString
 
 
 class VariationalUnitary:
-    """class representing the variational unitary ansataz."""
+    """class representing the variational unitary ansatz."""
 
     def __init__(
         self,
@@ -24,9 +24,9 @@ class VariationalUnitary:
         """
         Init function.
 
-        :param hamiltonian Hamiltonian of which one is interested in the dynamics.
-        :param number_of_layer number of steps for the optimization.
-        :param time final time to up to which one wants to perform the time evolution.
+        :param hamiltonian: Hamiltonian of which one is interested in the dynamics.
+        :param number_of_layer: number of layers for the optimization.
+        :param time: final time to up to which one wants to perform the time evolution.
         """
         self.n_terms: int = hamiltonian.get_n_terms()
         self.pauli_string_list: Sequence[PauliString] = hamiltonian.pauli_string_list
@@ -44,7 +44,7 @@ class VariationalUnitary:
         """
          Update theta ensuring that the condition Sum_i theta_i dt_i= is ensured.
 
-        :param new_array the new array containing the variational parameters. It's shape must be (R - 1, n_terms).
+        :param new_array: the new array containing the variational parameters. It's shape must be (R - 1, n_terms).
         """
         if new_array.shape != (self.depth - 1, self.n_terms):
             if self.depth == 1 and new_array.shape == (1, self.n_terms):
@@ -98,8 +98,8 @@ class VariationalUnitary:
         """
         Vectorized function to calculate all the chi coefficient at once.
 
-        param: left_indices indices of the left tensor which give non-zero contributions in the calculation of chi.
-        param: right_indices indices of the right tensor which give non-zero contributions in the calculation of chi.
+        :param left_indices: indices of the left tensor which give non-zero contributions in the calculation of chi.
+        :param right_indices: indices of the right tensor which give non-zero contributions in the calculation of chi.
         """
         theta_left: npt.NDArray = self.theta[:, left_indices]
         theta_right: npt.NDArray = self.theta[:, right_indices]
@@ -164,8 +164,8 @@ class VariationalUnitary:
         """
         Perturbative 2-norm.
 
-        param: theta parameters of the variational unitary.
-        returns: the perturbative approximation of the 2-norm difference between the exact and the variational representation.
+        :param theta: parameters of the variational unitary.
+        :return: the perturbative approximation of the 2-norm difference between the exact and the variational representation.
         """
         if not self.trace_calculated:
             self.calculate_traces()

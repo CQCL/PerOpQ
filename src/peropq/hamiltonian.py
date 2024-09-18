@@ -13,7 +13,7 @@ class Hamiltonian:
         """
         Initialization.
 
-        param: pauli_string_list contains all the terms of the hamiltonian.
+        :param pauli_string_list: contains all the terms of the hamiltonian.
         """
         self.pauli_string_list = pauli_string_list
         # Initialize the Pauli strings with coeff 1.0 and store the coefficients in self.cjs.

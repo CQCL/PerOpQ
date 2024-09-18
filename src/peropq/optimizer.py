@@ -23,10 +23,10 @@ class Optimizer:
         """
         Perform the minimization.
 
-        param: variational_unitary ansatz used for optimization
-        param: initial_guess initial guess for the optimization. If not provided, use the parameters of the Trotterization instead
-        returns: the result of the optimization
-        returns: the perturbative 2-norm
+        :param variational_unitary: ansatz used for optimization
+        :param initial_guess: initial guess for the optimization. If not provided, use the parameters of the Trotterization instead
+        :return: the result of the optimization
+        :return: the perturbative 2-norm
         """
         if len(initial_guess) != 0:
             x0: npt.NDArray = np.array(initial_guess)
@@ -58,10 +58,10 @@ class Optimizer:
         """
         Perform the minimization.
 
-        param: variational_unitary ansatz used for optimization
-        param: initial_guess initial guess for the optimization. If not provided, use the parameters of the Trotterization instead
-        returns: the result of the optimization
-        returns: the perturbative 2-norm
+        :param variational_unitary: ansatz used for optimization
+        :param initial_guess initial: guess for the optimization. If not provided, use the parameters of the Trotterization instead
+        :return: the result of the optimization
+        :return: the perturbative 2-norm
         """
         if len(initial_guess) != 0:
             x0: npt.NDArray = np.array(initial_guess)

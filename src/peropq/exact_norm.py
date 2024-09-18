@@ -20,10 +20,10 @@ class ExactUnitary(UnconstrainedVariationalUnitary):
         """
         Initialization.
 
-        :param hamiltonian target Hamiltonian
-        :param number_of_layers number of layers to be optimized over
-        :param time final time
-        :param number_of_qubits number of qubits
+        :param hamiltonian: target Hamiltonian
+        :param number_of_layers: number of layers to be optimized over
+        :param time: final time
+        :param number_of_qubits: number of qubits
         """
         super().__init__(
             hamiltonian,
@@ -43,7 +43,7 @@ class ExactUnitary(UnconstrainedVariationalUnitary):
         """
         Get the exact norm.
 
-        :param theta variational parameter for which the norm must be evaluated
+        :param theta: variational parameter for which the norm must be evaluated
         """
         # Reshape theta
         theta_updated = np.array(theta).reshape((self.depth, self.n_terms))

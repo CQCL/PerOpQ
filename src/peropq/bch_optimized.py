@@ -22,7 +22,7 @@ def _get_non_zero_trace_indices(bitstrings: npt.NDArray) -> npt.NDArray:
     Get all the the term indices which have non zero trace, i.e Tr(term[i]*term[j])!=0.
 
     Works directly at the bitstring level.
-    param: bitstring array containing bitstrings one which to compute the trace over.
+    :param bitstring: array containing bitstrings one which to compute the trace over.
     :return: an array containing the qubit indices on which the Pauli string does not have identity.
     """
     indices_list: list = []
@@ -49,15 +49,15 @@ def _loop_over_trace(
     """
     Just in timed compiled function which computes the norm once all the traces are calculated.
 
-    :param trace_list array containing all the non zero traces
-    :param indices array containing the indices corresponding to every trace
-    :param theta variational parameters
-    :param min_order minimum order to be taken into the calculation (i.e. 0 for uncontrained and 1 for contrained)
-    :param all_the_orders array containaing the order of every term included in the terms
-    :param all_the_indices indices of the theta parameters for all the terms in the trace
-    :param begin_list array containing the first index to take into account in the trace for the variational parameters
-    :param end_list array containing the last index to take into account in the trace for the variational parameters
-    :param all_the_coefficients coefficient of the NormTerms which need to be taken into account in the trace
+    :param trace_list: array containing all the non zero traces
+    :param indices: array containing the indices corresponding to every trace
+    :param theta: variational parameters
+    :param min_order: minimum order to be taken into the calculation (i.e. 0 for uncontrained and 1 for contrained)
+    :param all_the_orders: array containaing the order of every term included in the terms
+    :param all_the_indices: indices of the theta parameters for all the terms in the trace
+    :param begin_list: array containing the first index to take into account in the trace for the variational parameters
+    :param end_list: array containing the last index to take into account in the trace for the variational parameters
+    :param all_the_coefficients: coefficient of the NormTerms which need to be taken into account in the trace
     :return: the perturbative norm
     """
     s_norm: float = 0.0
@@ -96,10 +96,10 @@ class NormTerm:
     """
     Class representing a term to be taken into account in the norm.
 
-    :param pauli_string
-    :param order
-    :param coefficient
-    :param theta_indices representing the indices of the theta to be multiplied in front
+    :param pauli_string: of the term
+    :param order: at which the term is relevant
+    :param coefficient: in front of the Pauli string
+    :param theta_indices: represents the indices of the variational parameter to be multiplied in front
     """
 
     pauli_string: PauliString
@@ -147,9 +147,9 @@ class VariationalNorm:
         """
         Initialization.
 
-        :param variational_unitary unitary that needs to be optimized
-        :param order order at which the optimization needs to be performed
-        :param unconstrained Whether the zero and first order are constrained to cancel each other
+        :param variational_unitary: unitary that needs to be optimized
+        :param order: order at which the optimization needs to be performed
+        :param unconstrained: whether the zero and first order are constrained to cancel each other
         """
         self.variational_unitary = variational_unitary
         self.order = order
@@ -167,7 +167,7 @@ class VariationalNorm:
         """
         Compute the commutator of two sums of Pauli strings: [term_list1[0]+term_list1[1]+term_list1[2]+...,term_list2[0]+term_list2[1]+term_list2[2]+...].
 
-        :returns: a list of instances of NormTerm corresponding to the commutator.
+        :return: a list of instances of NormTerm corresponding to the commutator.
         """
         result_list: list[NormTerm] = []
         for term1 in term_list1:

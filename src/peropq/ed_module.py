@@ -14,7 +14,7 @@ class ExactDiagonalization:
         """
         Initializing the ed module.
 
-        param: qubit_number number of qubits.
+        :param qubit_number: number of qubits.
         """
         self.number_of_qubits = number_of_qubits
 
@@ -22,7 +22,7 @@ class ExactDiagonalization:
         """
         Converts a Pauli to a 2x2 sparse matrix.
 
-        param: pauli to be converted.
+        :param pauli: to be converted.
         """
         match pauli:
             case "I":
@@ -38,7 +38,7 @@ class ExactDiagonalization:
         """
         Transforms PauliString into sparse matrix.
 
-        param: pauli_string to be transformed into a sparse matrix.
+        :param pauli_string: to be transformed into a sparse matrix.
         """
         sparse_string: sp.spmatrix = pauli_string.coefficient * self.pauli_to_sparse(
             pauli_string.get_pauli(0),
@@ -51,7 +51,7 @@ class ExactDiagonalization:
         return sp.csc_matrix(sparse_string)
 
     def get_hamiltonian_matrix(self, hamiltonian: Hamiltonian) -> sp.spmatrix:
-        """param: hamiltonian to be converted to sparse."""
+        """Param hamiltonian: to be converted to sparse."""
         hamiltonian_matrix = self.get_sparse(
             hamiltonian.cjs[0] * hamiltonian.pauli_string_list[0],
         )
@@ -69,8 +69,8 @@ class ExactDiagonalization:
         """
         Get the continuous time evolution of an Hamiltonian.
 
-        param: hamiltonian governing the dynamics
-        param: time at which we want to time evolve.
+        :param hamiltonian: governing the dynamics
+        :param time: at which we want to time evolve.
         """
         hamiltonian_matrix = self.get_hamiltonian_matrix(hamiltonian)
         return sp.linalg.expm(-1j * time * hamiltonian_matrix)
@@ -82,7 +82,7 @@ class ExactDiagonalization:
         """
         Get the time evolution unitary from a variational unitary.
 
-        param: variational_unitary to be evolved.
+        :param variational_unitary: to be evolved.
         """
         u_sparse = sp.eye(2**self.number_of_qubits)
         for layer in range(variational_unitary.depth):
@@ -103,9 +103,9 @@ class ExactDiagonalization:
         """
         Apply the continuous time evolution.
 
-        param: hamiltonian governing the dynamics
-        param: time at which we want to time evolve.
-        param: state to be evolved.
+        :param hamiltonian: governing the dynamics
+        :param time: at which we want to time evolve.
+        :param state: to be evolved.
         """
         hamiltonian_matrix = self.get_hamiltonian_matrix(hamiltonian)
         return scipy.sparse.linalg.expm_multiply(
@@ -121,8 +121,8 @@ class ExactDiagonalization:
         """
         Apply the variational unitary to a state.
 
-        param: variational_unitary to be applied
-        param: state on which the unitary is applied
+        :param variational_unitary: to be applied
+        :param state: on which the unitary is applied
         """
         unitary = self.get_variational_evolution(variational_unitary)
         return unitary @ state
@@ -135,8 +135,8 @@ class ExactDiagonalization:
         """
         Returns the error made for by the variational unitary (compared to the continuous time evolution).
 
-        param: variational_unitary to be compared with the continuous time evolution.
-        param: hamiltonian used to caclulated the continuous time evolution.
+        :param variational_unitary  to be compared with the continuous time evolution.
+        :param hamiltonian: used to caclulated the continuous time evolution.
         """
         sparse_variational_unitary = self.get_variational_evolution(variational_unitary)
         sparse_continuous_unitary = self.get_continuous_time_evolution(
