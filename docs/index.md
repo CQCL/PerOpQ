@@ -10,5 +10,4 @@ hidden:
 maxdepth: 1
 ---
 
-reference
 ```
