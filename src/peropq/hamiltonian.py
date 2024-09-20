@@ -24,9 +24,17 @@ class Hamiltonian:
         self.cjs = cjs
 
     def get_n_terms(self) -> int:
-        """Method returning the number of Pauli Strings."""
+        """
+        Method returning the number of Pauli Strings.
+
+        :returns: number of terms (i.e. Pauli strings) of the Hamiltonian.
+        """
         return len(self.pauli_string_list)
 
     def get_cjs(self) -> list[complex]:
-        """Method returning the coefficients."""
+        """
+        Method returning the coefficients.
+
+        :returns: coefficient in front of each term of the Hamiltonian.
+        """
         return self.cjs

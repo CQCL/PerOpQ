@@ -25,8 +25,8 @@ class Optimizer:
 
         :param variational_unitary: ansatz used for optimization
         :param initial_guess: initial guess for the optimization. If not provided, use the parameters of the Trotterization instead
-        :return: the result of the optimization
-        :return: the perturbative 2-norm
+        :returns: the result of the optimization
+        :returns: the perturbative 2-norm
         """
         if len(initial_guess) != 0:
             x0: npt.NDArray = np.array(initial_guess)
@@ -60,8 +60,8 @@ class Optimizer:
 
         :param variational_unitary: ansatz used for optimization
         :param initial_guess initial: guess for the optimization. If not provided, use the parameters of the Trotterization instead
-        :return: the result of the optimization
-        :return: the perturbative 2-norm
+        :returns: the result of the optimization
+        :returns: the perturbative 2-norm
         """
         if len(initial_guess) != 0:
             x0: npt.NDArray = np.array(initial_guess)
@@ -105,7 +105,14 @@ class Optimizer:
         initial_guess: npt.NDArray = EMPTY_ARRAY,
         tol: float = 0,
     ) -> scipy.optimize.OptimizeResult:
-        """Optimize an instance of ExactUnitary."""
+        """
+        Optimize an instance of ExactUnitary.
+
+        :param exact_unitary: to be optimized
+        :param initial_guess: first guess to start the optimization
+        :param tol: tolerance passed to the optimization function
+        :returns: the optimization result form scipy.optimize.minimize
+        """
         if len(initial_guess) != 0:
             x0: npt.NDArray = np.array(initial_guess)
         else:

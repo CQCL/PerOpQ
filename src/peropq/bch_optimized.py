@@ -23,7 +23,7 @@ def _get_non_zero_trace_indices(bitstrings: npt.NDArray) -> npt.NDArray:
 
     Works directly at the bitstring level.
     :param bitstring: array containing bitstrings one which to compute the trace over.
-    :return: an array containing the qubit indices on which the Pauli string does not have identity.
+    :returns: an array containing the qubit indices on which the Pauli string does not have identity.
     """
     indices_list: list = []
     for i in range(len(bitstrings)):
@@ -58,7 +58,7 @@ def _loop_over_trace(
     :param begin_list: array containing the first index to take into account in the trace for the variational parameters
     :param end_list: array containing the last index to take into account in the trace for the variational parameters
     :param all_the_coefficients: coefficient of the NormTerms which need to be taken into account in the trace
-    :return: the perturbative norm
+    :returns: the perturbative norm
     """
     s_norm: float = 0.0
     for i_trace, trace in enumerate(trace_list):
@@ -167,7 +167,7 @@ class VariationalNorm:
         """
         Compute the commutator of two sums of Pauli strings: [term_list1[0]+term_list1[1]+term_list1[2]+...,term_list2[0]+term_list2[1]+term_list2[2]+...].
 
-        :return: a list of instances of NormTerm corresponding to the commutator.
+        :returns: a list of instances of NormTerm corresponding to the commutator.
         """
         result_list: list[NormTerm] = []
         for term1 in term_list1:
@@ -350,7 +350,12 @@ class VariationalNorm:
         self.calculated_trace = True
 
     def calculate_norm(self, theta: npt.NDArray) -> float:
-        """Calculate the norm for a given variational parameter theta."""
+        """
+        Calculate the norm for a given variational parameter theta.
+
+        :param theta: variational parameter
+        :returns: the norm
+        """
         if np.array(theta).shape[0] > self.variational_unitary.n_terms:
             # TODO: Get rid of the try expect
             try:

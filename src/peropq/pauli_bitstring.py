@@ -101,6 +101,7 @@ def pauli_from_string(
     :param length: legnth of the Pauli string (i.e. number of qubits)
     :param start_qubit: first qubit to place the Pauli on
     :param coefficent: of the Pauli string
+    :returns: instace of PauliString corresponding to the input string.
     """
     if not start_qubit + len(string) <= length:
         msg = "the Pauli string is too long for the provided length"
@@ -179,6 +180,7 @@ def bit_string_commutation(bit_string1: npt.NDArray, bit_string2: npt.NDArray) -
 
     :param bit_string1: first bit_string
     :param bit_string2: second bit_string
+    :returns: True if the two bitstrings commute, False otherwise.
     """
     number_anti_commute: int = 0
     if len(bit_string1) != len(bit_string2):

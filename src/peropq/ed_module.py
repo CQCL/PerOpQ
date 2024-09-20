@@ -137,6 +137,7 @@ class ExactDiagonalization:
 
         :param variational_unitary  to be compared with the continuous time evolution.
         :param hamiltonian: used to caclulated the continuous time evolution.
+        :returns: exact error norm
         """
         sparse_variational_unitary = self.get_variational_evolution(variational_unitary)
         sparse_continuous_unitary = self.get_continuous_time_evolution(

@@ -17,7 +17,7 @@ def get_commutator_pauli_tensors(
     where x is the tensor product, and k is the number of
     anti-commuting Pauli pairs.
 
-    :return: None if the strings commute, otherwise the commutator as a PauliString
+    :returns: None if the strings commute, otherwise the commutator as a PauliString
     """
     if left_pauli_string.commutes_with(right_pauli_string):
         return 0

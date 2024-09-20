@@ -100,6 +100,7 @@ class VariationalUnitary:
 
         :param left_indices: indices of the left tensor which give non-zero contributions in the calculation of chi.
         :param right_indices: indices of the right tensor which give non-zero contributions in the calculation of chi.
+        :returns: numpy array representing the tensor used in the norm calculation.
         """
         theta_left: npt.NDArray = self.theta[:, left_indices]
         theta_right: npt.NDArray = self.theta[:, right_indices]
@@ -165,7 +166,7 @@ class VariationalUnitary:
         Perturbative 2-norm.
 
         :param theta: parameters of the variational unitary.
-        :return: the perturbative approximation of the 2-norm difference between the exact and the variational representation.
+        :returns: the perturbative approximation of the 2-norm difference between the exact and the variational representation.
         """
         if not self.trace_calculated:
             self.calculate_traces()

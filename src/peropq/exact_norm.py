@@ -44,6 +44,7 @@ class ExactUnitary(UnconstrainedVariationalUnitary):
         Get the exact norm.
 
         :param theta: variational parameter for which the norm must be evaluated
+        :returns: the exact norm
         """
         # Reshape theta
         theta_updated = np.array(theta).reshape((self.depth, self.n_terms))
