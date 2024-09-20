@@ -7,13 +7,13 @@ import numpy as np
 import numpy.typing as npt
 from scipy.sparse import csr_array  # type: ignore[import-untyped]
 
-from peropq.commutators import get_commutator_pauli_tensors
+from peropq.commutators_bitstrings import get_commutator_pauli_tensors
 from peropq.hamiltonian import Hamiltonian
-from peropq.pauli import PauliString
+from peropq.pauli_bitstring import PauliString
 
 
 class VariationalUnitary:
-    """class representing the variational unitary ansataz."""
+    """class representing the variational unitary ansatz."""
 
     def __init__(
         self,
@@ -24,14 +24,14 @@ class VariationalUnitary:
         """
         Init function.
 
-        :param hamiltonian Hamiltonian of which one is interested in the dynamics.
-        :param R number of steps for the optimization.
-        :param t final time to up to which one wants to perform the time evolution.
+        :param hamiltonian: Hamiltonian of which one is interested in the dynamics.
+        :param number_of_layer: number of layers for the optimization.
+        :param time: final time to up to which one wants to perform the time evolution.
         """
         self.n_terms: int = hamiltonian.get_n_terms()
         self.pauli_string_list: Sequence[PauliString] = hamiltonian.pauli_string_list
         self.depth: int = number_of_layer
-        self.theta: npt.NDArray = np.zeros((number_of_layer, self.n_terms))
+        self.theta: npt.NDArray = 1j * np.zeros((number_of_layer, self.n_terms))
         self.cjs: Sequence[complex] = hamiltonian.get_cjs()
         self.time: float = time
         self.test: npt.NDArray = np.zeros((number_of_layer, number_of_layer))
@@ -44,11 +44,14 @@ class VariationalUnitary:
         """
          Update theta ensuring that the condition Sum_i theta_i dt_i= is ensured.
 
-        :param new_array the new array containing the variational parameters. It's shape must be (R - 1, n_terms).
+        :param new_array: the new array containing the variational parameters. It's shape must be (R - 1, n_terms).
         """
         if new_array.shape != (self.depth - 1, self.n_terms):
-            error_message = "Wrong length provided."
-            raise ValueError(error_message)
+            if self.depth == 1 and new_array.shape == (1, self.n_terms):
+                pass
+            else:
+                error_message = "Wrong length provided."
+                raise ValueError(error_message)
         for j in range(self.n_terms):
             for r in range(self.depth - 1):
                 self.theta[r, j] = new_array[r, j]
@@ -58,15 +61,29 @@ class VariationalUnitary:
 
     def get_initial_trotter_vector(self) -> npt.NDArray:
         """Get the variational parameters corresponding to the Trotterization. Useful to initialize the optimization."""
-        theta_trotter: npt.NDArray = np.zeros((self.depth - 1, self.n_terms))
-        for j in range(self.n_terms):
-            for r in range(self.depth - 1):
-                theta_trotter[r, j] = self.cjs[j] * self.time / self.depth
+        theta_trotter: npt.NDArray
+        if self.depth > 1:
+            theta_trotter = np.zeros((self.depth - 1, self.n_terms), dtype=np.complex64)
+            for j in range(self.n_terms):
+                for r in range(self.depth - 1):
+                    theta_trotter[r, j] = self.cjs[j] * self.time / self.depth
+        else:
+            theta_trotter = np.zeros((self.depth, self.n_terms), dtype=np.complex64)
+            for j in range(self.n_terms):
+                theta_trotter[0, j] = self.cjs[j] * self.time
         return theta_trotter
 
     def flatten_theta(self, theta: npt.NDArray) -> npt.NDArray:
         """Returns the variational parameters as flatten (R-1)*n_terms array. Useful to pass to a minimization function."""
-        return np.array(theta).reshape((self.depth - 1) * self.n_terms)
+        if self.depth > 1:
+            return np.array(theta).reshape((self.depth - 1) * self.n_terms)
+        return np.array(theta).reshape(self.n_terms)
+
+    def unflatten_theta(self, flat_theta: npt.NDArray) -> npt.NDArray:
+        """Returns the flattened variational parameters as an array with shape (depth,n_terms)."""
+        if self.depth > 1:
+            return np.array(flat_theta).reshape((self.depth - 1, self.n_terms))
+        return np.array(flat_theta).reshape((1, self.n_terms))
 
     def set_theta_to_trotter(self) -> None:
         """Sets the variational parameters to the Trotter parameters."""
@@ -81,8 +98,9 @@ class VariationalUnitary:
         """
         Vectorized function to calculate all the chi coefficient at once.
 
-        param: left_indices indices of the left tensor which give non-zero contributions in the calculation of chi.
-        param: right_indices indices of the right tensor which give non-zero contributions in the calculation of chi.
+        :param left_indices: indices of the left tensor which give non-zero contributions in the calculation of chi.
+        :param right_indices: indices of the right tensor which give non-zero contributions in the calculation of chi.
+        :returns: numpy array representing the tensor used in the norm calculation.
         """
         theta_left: npt.NDArray = self.theta[:, left_indices]
         theta_right: npt.NDArray = self.theta[:, right_indices]
@@ -147,19 +165,13 @@ class VariationalUnitary:
         """
         Perturbative 2-norm.
 
-        param: theta parameters of the variational unitary.
-        returns: the perturbative approximation of the 2-norm difference between the exact and the variational representation.
+        :param theta: parameters of the variational unitary.
+        :returns: the perturbative approximation of the 2-norm difference between the exact and the variational representation.
         """
         if not self.trace_calculated:
             self.calculate_traces()
-        if np.array(theta).shape[0] != 0:
-            theta_new = np.array(theta).reshape(
-                (
-                    self.depth - 1,
-                    self.n_terms,
-                ),
-            )
-            self.update_theta(theta_new)
+        theta_new = self.unflatten_theta(np.array(theta))
+        self.update_theta(theta_new)
         chi_tensor = self.chi_tensor(
             self.left_indices,
             self.right_indices,

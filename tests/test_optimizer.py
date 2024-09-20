@@ -1,7 +1,7 @@
 import numpy as np
 from peropq.hamiltonian import Hamiltonian
 from peropq.optimizer import Optimizer
-from peropq.pauli import Pauli, PauliString
+from peropq.pauli_bitstring import PauliString, pauli_from_string
 from peropq.variational_unitary import VariationalUnitary
 
 
@@ -11,11 +11,11 @@ def test_optimizer() -> None:
     y_list: list[PauliString] = []
     n = 4
     for i in range(n):
-        zi = PauliString.from_pauli_sequence(paulis=[Pauli.Z], start_qubit=i)
+        zi = pauli_from_string(string="Z", length=n, start_qubit=i)
         z_list.append(zi)
-        xi = PauliString.from_pauli_sequence(paulis=[Pauli.X], start_qubit=i)
+        xi = pauli_from_string(string="X", length=n, start_qubit=i)
         x_list.append(xi)
-        yi = PauliString.from_pauli_sequence(paulis=[Pauli.Y], start_qubit=i)
+        yi = pauli_from_string(string="Y", length=n, start_qubit=i)
         y_list.append(yi)
     # Ising model
     term_list = []
@@ -55,3 +55,6 @@ def test_optimizer() -> None:
     )
     res = opt.optimize(variational_unitary)
     assert res[0].fun < 1e-10
+
+
+test_optimizer()
