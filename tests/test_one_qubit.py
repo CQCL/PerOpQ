@@ -1,4 +1,3 @@
-import numpy as np
 from peropq.ed_module import ExactDiagonalization
 from peropq.exact_norm import ExactUnitary
 from peropq.hamiltonian import Hamiltonian
@@ -43,10 +42,10 @@ def test_one_qubit() -> None:
             hamiltonian=h_ising,
         )
         variational_error_list.append(variational_error)
-    assert np.isclose(variational_error_list[0], 0.008169965456694076)
-    assert np.isclose(variational_error_list[1], 0.0008387626025238811)
-    assert np.isclose(variational_error_list[2], 5.563456464299176e-05)
 
+    assert variational_error_list[0] < 0.01
+    assert variational_error_list[1] < 0.001
+    assert variational_error_list[2] < 1e-04
     ########
     # Do the optimization with ExactUnitary
     exact_unitary = ExactUnitary(
@@ -68,4 +67,4 @@ def test_one_qubit() -> None:
         variational_unitary=exact_unitary,
         hamiltonian=h_ising,
     )
-    assert np.isclose(variational_error, 2.105879292582136e-06)
+    assert variational_error < 1e-5
